@@ -56,3 +56,34 @@ def registrar_venda(produto_id):
             return redirect(url_for('estoque.lista_produtos'))
     else:
         return abort(403)
+    
+# Adicione esta rota ao seu estoque.py
+
+@estoque.route('/produtos/editar/<int:id>', methods=['POST'])
+@login_required
+def editar_produto(id):
+    # Busca o produto garantindo que pertence ao usuário
+    produto = Produto.query.filter_by(id=id, papelaria_id=current_user.papelaria_id).first_or_404()
+    
+    # Atualiza os campos com os dados vindos do formulário
+    produto.nome = request.form.get('nome')
+    produto.preco_venda = float(request.form.get('preco_venda'))
+    produto.estoque_atual = int(request.form.get('estoque_atual'))
+    
+    db.session.commit()
+    flash(f"Produto '{produto.nome}' atualizado com sucesso!", "success")
+    return redirect(url_for('estoque.lista_produtos'))
+
+# Adicione esta rota ao seu estoque.py
+
+@estoque.route('/produtos/excluir/<int:id>', methods=['POST'])
+@login_required
+def excluir_produto(id):
+    # Busca o produto garantindo que pertence à papelaria do usuário logado
+    produto = Produto.query.filter_by(id=id, papelaria_id=current_user.papelaria_id).first_or_404()
+    
+    db.session.delete(produto)
+    db.session.commit()
+    
+    flash(f"Produto excluído com sucesso!", "warning")
+    return redirect(url_for('estoque.lista_produtos'))

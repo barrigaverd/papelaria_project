@@ -38,7 +38,22 @@
                             <button class="btn btn-sm btn-success shadow-sm me-1" data-bs-toggle="modal" data-bs-target="#venda{{ produto.id }}">
                                 <i class="bi bi-cart-plus me-1"></i>Vender
                             </button>
-                            <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-outline-secondary me-1" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#modalEditarProduto"
+                                    data-id="{{ produto.id }}"
+                                    data-nome="{{ produto.nome }}"
+                                    data-preco="{{ produto.preco_venda }}"
+                                    data-estoque="{{ produto.estoque_atual }}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#modalExcluirProduto"
+                                    data-id="{{ produto.id }}"
+                                    data-nome="{{ produto.nome }}">
+                                <i class="bi bi-trash"></i>
+                            </button>
                         </td>
                     </tr>
 
@@ -111,4 +126,83 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="modalEditarProduto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-secondary text-white">
+                <h5 class="modal-title">Editar Produto</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formEditar" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nome do Produto</label>
+                        <input type="text" name="nome" id="edit-nome" class="form-control" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Preço (R$)</label>
+                            <input type="number" step="0.01" name="preco_venda" id="edit-preco" class="form-control" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Estoque</label>
+                            <input type="number" name="estoque_atual" id="edit-estoque" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-secondary w-100">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalExcluirProduto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirmar?</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p>Deseja realmente excluir o produto <strong id="nome-excluir"></strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <form id="formExcluir" method="POST">
+                    <button type="submit" class="btn btn-danger w-100">Sim, Excluir</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var modalEditar = document.getElementById('modalEditarProduto');
+    modalEditar.addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget;
+        
+        // Extrai as informações dos atributos data-
+        var id = button.getAttribute('data-id');
+        var nome = button.getAttribute('data-nome');
+        var preco = button.getAttribute('data-preco');
+        var estoque = button.getAttribute('data-estoque');
+
+        // Preenche os campos do modal
+        document.getElementById('edit-nome').value = nome;
+        document.getElementById('edit-preco').value = preco;
+        document.getElementById('edit-estoque').value = estoque;
+        
+        // Ajusta o 'action' do formulário para o ID correto
+        document.getElementById('formEditar').action = "/produtos/editar/" + id;
+    });
+    var modalExcluir = document.getElementById('modalExcluirProduto');
+    modalExcluir.addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget;
+        var id = button.getAttribute('data-id');
+        var nome = button.getAttribute('data-nome');
+
+        document.getElementById('nome-excluir').innerText = nome;
+        document.getElementById('formExcluir').action = "/produtos/excluir/" + id;
+    });
+</script>
 {% endblock %}

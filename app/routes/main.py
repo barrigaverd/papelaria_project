@@ -2,7 +2,7 @@
 # Importe Blueprint, render_template, redirect, url_for
 from flask import Blueprint, render_template, redirect, url_for
 # Importe login_required de flask_login
-from flask_login import login_required, user_accessed, current_user
+from flask_login import login_required, current_user
 from models import Produto, Movimentacao
 from extensions import db
 from sqlalchemy import func
@@ -18,7 +18,7 @@ main = Blueprint('main', __name__)
 @main.route("/")
 def index():
 # - Se o usuário estiver logado: redirecione para 'main.dashboard'
-    if user_accessed:
+    if current_user.is_authenticated:
         return redirect(url_for("main.dashboard"))
 # - Se não: redirecione para 'auth.login_cliente'
     return redirect(url_for("auth.login_cliente"))

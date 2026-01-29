@@ -6,10 +6,7 @@ from flask_migrate import Migrate
 from app.routes.auth import auth
 from app.routes.main import main
 from app.routes.estoque import estoque
-
-
-
-
+from app.routes.vendas import vendas
 
 # Instanciação das extensões (serão ligadas ao app depois)
 
@@ -30,13 +27,13 @@ def create_app():
     cli.init_app(app)
     migrate.init_app(app, db)
     login_manager.login_message_category = 'info'
-    login_manager.init_app(app)
-    
+    login_manager.init_app(app)    
     
     from models import Papelaria, Usuario, Produto, Cliente, Movimentacao
     app.register_blueprint(auth)
     app.register_blueprint(main)
     app.register_blueprint(estoque)
+    app.register_blueprint(vendas)
     
     #   - Defina a rota de login padrão: login_manager.login_view = 'auth.login_cliente'
     login_manager.login_view = 'auth.login_cliente'
