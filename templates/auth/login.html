@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center vh-100" style="margin-top: -100px;">
+    <div class="col-md-4">
+        <div class="card shadow-lg border-0">
+            <div class="card-body p-5">
+                <h3 class="text-center mb-4">Acesso ao Sistema</h3>
+                
+                <form action="" method="POST">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Usuário</label>
+                        <input type="text" name="username" id="username" class="form-control" placeholder="Seu usuário" required>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="password" class="form-label">Senha</label>
+                        <input type="password" name="password" id="password" class="form-control" placeholder="••••••••" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100 py-2">Entrar</button>
+                </form>
+                
+                <div class="text-center mt-3">
+                    <small class="text-muted">Esqueceu a senha? Contate o administrador.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

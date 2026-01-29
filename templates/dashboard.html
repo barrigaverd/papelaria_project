@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4 mt-3">
+    <div class="col">
+        <h2 class="fw-bold text-dark">Painel de Controle</h2>
+        <p class="text-muted">Status atual da <strong>{{ current_user.papelaria.nome_fantasia }}</strong></p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm bg-success text-white">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase mb-2" style="font-size: 0.8rem; opacity: 0.8;">Vendas Hoje</h6>
+                        <h2 class="mb-0 fw-bold">R$ {{ "%.2f"|format(vendas_hoje) }}</h2>
+                    </div>
+                    <i class="bi bi-currency-dollar fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm bg-primary text-white">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase mb-2" style="font-size: 0.8rem; opacity: 0.8;">Itens Cadastrados</h6>
+                        <h2 class="mb-0 fw-bold">{{ total_produtos }}</h2>
+                    </div>
+                    <i class="bi bi-box-seam fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm {{ 'bg-danger text-white' if alertas_estoque > 0 else 'bg-light text-dark' }}">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase mb-2" style="font-size: 0.8rem; opacity: 0.8;">Alertas de Estoque</h6>
+                        <h2 class="mb-0 fw-bold">{{ alertas_estoque }}</h2>
+                    </div>
+                    <i class="bi bi-exclamation-triangle fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm p-4 text-center bg-white">
+            <h5 class="mb-3">Ações Rápidas</h5>
+            <div class="d-flex justify-content-center gap-3">
+                <a href="{{ url_for('estoque.lista_produtos') }}" class="btn btn-outline-primary px-4">
+                    <i class="bi bi-list-ul me-2"></i>Ver Estoque
+                </a>
+                <button class="btn btn-primary px-4" data-bs-toggle="modal" data-bs-target="#modalNovoProdutoManual">
+                   <i class="bi bi-plus-lg me-2"></i>Novo Produto
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# --- Ambientes Virtuais ---
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# --- Variáveis de Ambiente e Segredos ---
+.env
+.flaskenv
+instance/
+.secret
+.key
+
+# --- Banco de Dados ---
+# Ignoramos o arquivo do banco de dados local para não subir dados de teste
+*.db
+*.sqlite
+*.sqlite3
+
+# --- IDEs e Editores ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- Sistema Operacional ---
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# --- Logs ---
+*.log

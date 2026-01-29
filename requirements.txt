@@ -1,0 +1,14 @@
+# O framework principal
+Flask==3.0.0
+
+# ORM para lidar com o Banco de Dados (SQLAlchemy)
+Flask-SQLAlchemy==3.1.1
+
+# Ferramenta para gerenciar migrações de banco (essencial para evoluir o sistema)
+Flask-Migrate==4.0.5
+
+# Gerenciamento de login e sessões de usuários
+Flask-Login==0.6.3
+
+# Para carregar variáveis de ambiente de um arquivo .env
+python-dotenv==1.0.0
