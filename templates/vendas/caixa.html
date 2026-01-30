@@ -58,7 +58,8 @@
                         <span>TOTAL:</span>
                         <span class="fw-bold">R$ <span id="valor-total-cupom">0.00</span></span>
                     </div>
-                    <button class="btn btn-primary w-100 btn-lg shadow-sm" id="btn-finalizar" disabled>
+                    <button class="btn btn-primary w-100 btn-lg shadow-sm" id="btn-finalizar" 
+                            data-bs-toggle="modal" data-bs-target="#modalPagamento" disabled>
                         Finalizar Pagamento
                     </button>
                 </div>
@@ -95,10 +96,40 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="modalPagamento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Finalizar Venda</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <h2 class="display-4 fw-bold text-success mb-4">R$ <span id="total-final-modal">0,00</span></h2>
+                
+                <label class="form-label fw-bold">Forma de Pagamento:</label>
+                <div class="d-grid gap-2">
+                    <input type="radio" class="btn-check" name="pagamento" id="pago_dinheiro" value="DINHEIRO" checked>
+                    <label class="btn btn-outline-dark btn-lg py-3" for="pago_dinheiro"><i class="bi bi-cash-stack me-2"></i>Dinheiro</label>
+
+                    <input type="radio" class="btn-check" name="pagamento" id="pago_pix" value="PIX">
+                    <label class="btn btn-outline-dark btn-lg py-3" for="pago_pix"><i class="bi bi-qr-code me-2"></i>Pix</label>
+
+                    <input type="radio" class="btn-check" name="pagamento" id="pago_cartao" value="CARTAO">
+                    <label class="btn btn-outline-dark btn-lg py-3" for="pago_cartao"><i class="bi bi-credit-card me-2"></i>Cartão</label>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-success btn-lg w-100 py-3 fw-bold" onclick="enviarVenda()">
+                    CONFIRMAR E FINALIZAR
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
     let totalVenda = 0;
 
-    // Captura os dados ao abrir o Modal (Já fizemos no passo anterior)
+    // 1. Preenche o Modal de Ajuste ao clicar em "Adicionar"
     var modalAjuste = document.getElementById('modalAjusteItem');
     modalAjuste.addEventListener('show.bs.modal', function (event) {
         var button = event.relatedTarget;
@@ -108,22 +139,22 @@
         document.getElementById('qtdModal').value = 1;
     });
 
+    // 2. Adiciona o item ajustado ao Cupom
     function confirmarInclusao() {
-        // 1. Pega os valores ajustados no Modal
+        const id = document.getElementById('idProdutoModal').value;
         const nome = document.getElementById('nomeProdutoModal').innerText;
         const qtd = parseInt(document.getElementById('qtdModal').value);
         const preco = parseFloat(document.getElementById('precoModal').value);
         const subtotal = qtd * preco;
 
-        // 2. Remove o aviso de "vazio" se for o primeiro item
         const avisoVazio = document.getElementById('aviso-vazio');
         if (avisoVazio) avisoVazio.remove();
 
-        // 3. Cria a linha do item no cupom
         const lista = document.getElementById('lista-itens-cupom');
+        // AJUSTE: Adicionamos data-id, data-qtd e data-preco na div para facilitar a leitura depois
         const itemHtml = `
             <div class="d-flex justify-content-between align-items-start border-bottom mb-2 pb-2 item-cupom" 
-                data-subtotal="${subtotal}">
+                data-id="${id}" data-qtd="${qtd}" data-preco="${preco.toFixed(2)}" data-subtotal="${subtotal}">
                 <div class="me-auto">
                     <div class="fw-bold">${nome}</div>
                     <small class="text-muted">${qtd} un x R$ ${preco.toFixed(2)}</small>
@@ -139,59 +170,78 @@
         `;
         lista.insertAdjacentHTML('beforeend', itemHtml);
 
-        // 4. Atualiza o Total Geral
         totalVenda += subtotal;
         document.getElementById('valor-total-cupom').innerText = totalVenda.toFixed(2);
         document.getElementById('btn-finalizar').disabled = false;
 
-        // 5. Fecha o Modal
         bootstrap.Modal.getInstance(modalAjuste).hide();
     }
-    function atualizarTotal() {
-        let novoTotal = 0;
-        // Busca todos os elementos que contém o valor do subtotal no cupom
-        const subtotais = document.querySelectorAll('#lista-itens-cupom .fw-bold.text-end div, #lista-itens-cupom .text-end .fw-bold');
-        
-        // Como a estrutura acima pode variar, vamos simplificar a lógica de soma
-        // Baseado no valor total que já temos ou recalculando pelas linhas
-        // Vamos usar a lógica mais robusta: somar todos os valores finais das linhas
-        
-        // Se o cupom ficar vazio, mostra o aviso novamente
-        const lista = document.getElementById('lista-itens-cupom');
-        if (lista.children.length === 0) {
-            lista.innerHTML = '<div id="aviso-vazio" class="text-center py-5 text-muted"><i class="bi bi-cart3 fs-1 d-block"></i>Aguardando produtos...</div>';
-            totalVenda = 0;
-            document.getElementById('btn-finalizar').disabled = true;
-        } else {
-            // Lógica simplificada: Recalcular o total baseando-se no que sobrou
-            // Para este passo, vamos apenas resetar o total global ao remover via 'this'
-            // Mas a forma correta é iterar. Vamos manter simples para o teste:
-            // (Apenas para este teste, o totalVenda será ajustado manualmente no onclick)
-        }
-    }
+
+    // 3. Remove item e atualiza total
     function removerItem(botao, valorItem) {
-        // 1. Remove a linha do HTML
         const linha = botao.closest('.item-cupom');
         linha.remove();
-
-        // 2. Subtrai o valor do total global
         totalVenda -= valorItem;
-
-        // 3. Garante que o total nunca seja negativo (devido a arredondamentos)
         if (totalVenda < 0) totalVenda = 0;
-
-        // 4. Atualiza o valor na tela
         document.getElementById('valor-total-cupom').innerText = totalVenda.toFixed(2);
 
-        // 5. Se o cupom ficou vazio, reseta o visual
         const lista = document.getElementById('lista-itens-cupom');
         if (lista.querySelectorAll('.item-cupom').length === 0) {
-            lista.innerHTML = `
-                <div id="aviso-vazio" class="text-center py-5 text-muted">
-                    <i class="bi bi-cart3 fs-1 d-block"></i>
-                    Aguardando produtos...
-                </div>`;
+            lista.innerHTML = `<div id="aviso-vazio" class="text-center py-5 text-muted"><i class="bi bi-cart3 fs-1 d-block"></i>Aguardando produtos...</div>`;
             document.getElementById('btn-finalizar').disabled = true;
+        }
+    }
+
+    // 4. Prepara o Modal de Pagamento com o Total
+    document.getElementById('modalPagamento').addEventListener('show.bs.modal', function () {
+        document.getElementById('total-final-modal').innerText = totalVenda.toFixed(2);
+    });
+
+    // 5. ENVIO FINAL PARA O PYTHON
+    async function enviarVenda() {
+        const itens = [];
+        const linhas = document.querySelectorAll('.item-cupom');
+        
+        // Captura a forma de pagamento selecionada
+        const radioPagamento = document.querySelector('input[name="pagamento"]:checked');
+        const formaPagamento = radioPagamento ? radioPagamento.value : 'DINHEIRO';
+
+        if (linhas.length === 0) {
+            alert("O cupom está vazio!");
+            return;
+        }
+
+        linhas.forEach(linha => {
+            itens.push({
+                produto_id: linha.getAttribute('data-id'), 
+                quantidade: parseInt(linha.getAttribute('data-qtd')),
+                preco_venda: parseFloat(linha.getAttribute('data-preco'))
+            });
+        });
+
+        console.log("Enviando dados:", { itens, forma_pagamento: formaPagamento });
+
+        try {
+            const response = await fetch('/vendas/finalizar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    itens: itens,
+                    forma_pagamento: formaPagamento 
+                })
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.status === 'success') {
+                alert("✅ Venda registrada com sucesso!");
+                window.location.reload(); // Agora deve recarregar
+            } else {
+                alert("❌ Erro no servidor: " + (result.message || "Erro desconhecido"));
+            }
+        } catch (error) {
+            console.error("Erro na requisição:", error);
+            alert("🚀 Erro de conexão ou no JavaScript. Verifique o console (F12).");
         }
     }
 </script>

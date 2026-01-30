@@ -96,6 +96,8 @@ class Movimentacao(db.Model):
     descricao = db.Column(db.String(100))
 # - valor: Numérico (db.Numeric com 2 casas decimais).
     valor = db.Column(db.Numeric(10, 2), nullable=False)
+    forma_pagamento = db.Column(db.String(20), nullable=True)
+    quantidade = db.Column(db.Integer, nullable=False)
 # - data: Data/Hora (db.DateTime, use o valor padrão datetime.utcnow).
     data = db.Column(db.DateTime, default=datetime.utcnow)
 # - produto_id: Inteiro, Chave Estrangeira apontando para Produto.

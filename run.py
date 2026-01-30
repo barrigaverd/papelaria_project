@@ -7,9 +7,9 @@ from app.routes.auth import auth
 from app.routes.main import main
 from app.routes.estoque import estoque
 from app.routes.vendas import vendas
-
+from dotenv import load_dotenv
 # Instanciação das extensões (serão ligadas ao app depois)
-
+load_dotenv()
 migrate = Migrate()
 
 def create_app():
@@ -18,11 +18,15 @@ def create_app():
     
     app = Flask(__name__)
     
-    # Aplica as configurações que definimos no config.py
+    # 1. Primeiro carrega o que estiver no arquivo Config
     app.config.from_object(Config)
-
     
-    # Inicializa o banco de dados e as migrações no contexto do app
+    # 2. DEPOIS você força as configurações manuais para garantir que nada as apague
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///papelaria.db'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SECRET_KEY'] = 'uma-chave-qualquer-temporaria'
+    
+    # Agora sim, inicializa o banco com a URI correta na memória
     db.init_app(app)
     cli.init_app(app)
     migrate.init_app(app, db)
@@ -33,7 +37,7 @@ def create_app():
     app.register_blueprint(auth)
     app.register_blueprint(main)
     app.register_blueprint(estoque)
-    app.register_blueprint(vendas)
+    app.register_blueprint(vendas, url_prefix='/vendas')
     
     #   - Defina a rota de login padrão: login_manager.login_view = 'auth.login_cliente'
     login_manager.login_view = 'auth.login_cliente'
