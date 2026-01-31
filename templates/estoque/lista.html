@@ -8,6 +8,22 @@
     </button>
 </div>
 
+<div class="row mb-3">
+    <div class="col-md-6">
+        <form action="{{ url_for('estoque.lista_produtos') }}" method="GET" class="d-flex">
+            <div class="input-group shadow-sm">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="search" class="form-control border-start-0 ps-0" 
+                       placeholder="Buscar produto por nome..." value="{{ search }}">
+                <button type="submit" class="btn btn-primary">Buscar</button>
+                {% if search %}
+                    <a href="{{ url_for('estoque.lista_produtos') }}" class="btn btn-outline-secondary">Limpar</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="card shadow-sm border-0">
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -15,7 +31,9 @@
                 <thead class="table-light">
                     <tr>
                         <th class="ps-4">Produto</th>
-                        <th>Preço Unit.</th>
+                        <th>Categoria</th>
+                        <th>P. Custo</th>
+                        <th>P. Venda</th>
                         <th>Estoque</th>
                         <th class="text-end pe-4">Ações</th>
                     </tr>
@@ -26,66 +44,48 @@
                         <td class="ps-4">
                             <span class="fw-bold text-dark">{{ produto.nome }}</span>
                         </td>
-                        <td>R$ {{ "%.2f"|format(produto.preco_venda) }}</td>
+                        <td>
+                            {% if produto.categoria %}
+                                <span class="badge bg-info-subtle text-info border border-info-subtle">{{ produto.categoria.descricao }}</span>
+                            {% else %}
+                                <span class="badge bg-light text-muted border">Sem Cat.</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted small">R$ {{ "%.2f"|format(produto.preco_custo or 0) }}</td>
+                        <td class="fw-bold text-success">R$ {{ "%.2f"|format(produto.preco_venda) }}</td>
                         <td>
                             {% if produto.estoque_atual <= 5 %}
-                                <span class="badge bg-danger-subtle text-danger">Critico: {{ produto.estoque_atual }}</span>
+                                <span class="badge bg-danger-subtle text-danger">Crítico: {{ produto.estoque_atual }}</span>
                             {% else %}
-                                <span class="badge bg-success-subtle text-success">{{ produto.estoque_atual }} em stock</span>
+                                <span class="badge bg-success-subtle text-success">{{ produto.estoque_atual }} un.</span>
                             {% endif %}
                         </td>
                         <td class="text-end pe-4">
-                            <button class="btn btn-sm btn-success shadow-sm me-1" data-bs-toggle="modal" data-bs-target="#venda{{ produto.id }}">
-                                <i class="bi bi-cart-plus me-1"></i>Vender
-                            </button>
-                            <button class="btn btn-sm btn-outline-secondary me-1" 
+                            <button class="btn btn-sm btn-outline-primary me-1 shadow-sm" 
                                     data-bs-toggle="modal" 
                                     data-bs-target="#modalEditarProduto"
                                     data-id="{{ produto.id }}"
                                     data-nome="{{ produto.nome }}"
-                                    data-preco="{{ produto.preco_venda }}"
+                                    data-custo="{{ produto.preco_custo }}"
+                                    data-venda="{{ produto.preco_venda }}"
+                                    data-categoria="{{ produto.categoria_id or '' }}"
                                     data-estoque="{{ produto.estoque_atual }}">
-                                <i class="bi bi-pencil"></i>
+                                <i class="bi bi-pencil-square"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger" 
+                            <button class="btn btn-sm btn-outline-danger shadow-sm" 
                                     data-bs-toggle="modal" 
                                     data-bs-target="#modalExcluirProduto"
                                     data-id="{{ produto.id }}"
                                     data-nome="{{ produto.nome }}">
-                                <i class="bi bi-trash"></i>
+                                <i class="bi bi-trash3"></i>
                             </button>
                         </td>
                     </tr>
-
-                    <div class="modal fade" id="venda{{ produto.id }}" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog modal-sm modal-dialog-centered">
-                            <div class="modal-content border-0 shadow">
-                                <div class="modal-header bg-success text-white">
-                                    <h6 class="modal-title">Vender {{ produto.nome }}</h6>
-                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                </div>
-                                <form action="{{ url_for('estoque.registrar_venda', produto_id=produto.id) }}" method="POST">
-                                    <div class="modal-body">
-                                        <div class="text-center mb-3">
-                                            <span class="text-muted small d-block">Preço: R$ {{ produto.preco_venda }}</span>
-                                            <span class="text-muted small">Disponível: {{ produto.estoque_atual }} un.</span>
-                                        </div>
-                                        <label class="form-label small fw-bold">Quantidade a vender:</label>
-                                        <input type="number" name="quantidade" class="form-control form-control-lg text-center" 
-                                               value="1" min="1" max="{{ produto.estoque_atual }}" required>
-                                    </div>
-                                    <div class="modal-footer border-0 p-3">
-                                        <button type="submit" class="btn btn-success w-100 py-2">Confirmar Venda</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
                     {% else %}
                     <tr>
-                        <td colspan="4" class="text-center py-5 text-muted">
+                        <td colspan="6" class="text-center py-5 text-muted">
                             <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                            Ainda não tens produtos cadastrados.
+                            Nenhum produto encontrado.
                         </td>
                     </tr>
                     {% endfor %}
@@ -93,83 +93,137 @@
             </table>
         </div>
     </div>
+    
+    {% if pagination.pages > 1 %}
+    <div class="card-footer bg-white border-top-0 py-3">
+        <nav>
+            <ul class="pagination justify-content-center mb-0">
+                <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
+                    <a class="page-link shadow-sm" href="{{ url_for('estoque.lista_produtos', page=pagination.prev_num, search=search) }}">Anterior</a>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link text-dark fw-bold">Página {{ pagination.page }} de {{ pagination.pages }}</span>
+                </li>
+                <li class="page-item {{ 'disabled' if not pagination.has_next }}">
+                    <a class="page-link shadow-sm" href="{{ url_for('estoque.lista_produtos', page=pagination.next_num, search=search) }}">Próximo</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
 </div>
 
 <div class="modal fade" id="modalNovoProduto" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Novo Produto</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold">Novo Produto</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form action="{{ url_for('estoque.novo_produto') }}" method="POST">
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Nome do Produto</label>
-                        <input type="text" name="nome" class="form-control" required>
+                        <label class="form-label fw-bold">Nome do Produto</label>
+                        <input type="text" name="nome" class="form-control" placeholder="Ex: Caderno 10 Matérias" required>
                     </div>
+
                     <div class="row">
-                        <div class="col-6 mb-3">
-                            <label class="form-label">Preço Venda (R$)</label>
-                            <input type="number" step="0.01" name="preco_venda" class="form-control" required>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold text-muted small uppercase">P. Custo (R$)</label>
+                            <input type="number" step="0.01" name="preco_custo" class="form-control" placeholder="0.00">
                         </div>
-                        <div class="col-6 mb-3">
-                            <label class="form-label">Qtd. Inicial</label>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold text-success small uppercase">P. Venda (R$)</label>
+                            <input type="number" step="0.01" name="preco_venda" class="form-control" placeholder="0.00" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Estoque Inicial</label>
                             <input type="number" name="estoque_atual" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Categoria</label>
+                            <select name="categoria_id" class="form-select">
+                                <option value="">Sem Categoria</option>
+                                {% for cat in categorias %}
+                                <option value="{{ cat.id }}">{{ cat.descricao }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary w-100">Cadastrar</button>
+                <div class="modal-footer bg-light border-0">
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">CADASTRAR PRODUTO</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
 <div class="modal fade" id="modalEditarProduto" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-secondary text-white">
-                <h5 class="modal-title">Editar Produto</h5>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold">Editar Produto</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="formEditar" method="POST">
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Nome do Produto</label>
+                        <label class="form-label fw-bold">Nome do Produto</label>
                         <input type="text" name="nome" id="edit-nome" class="form-control" required>
                     </div>
+                    
                     <div class="row">
                         <div class="col-6 mb-3">
-                            <label class="form-label">Preço (R$)</label>
-                            <input type="number" step="0.01" name="preco_venda" id="edit-preco" class="form-control" required>
+                            <label class="form-label fw-bold text-muted small">Custo (R$)</label>
+                            <input type="number" step="0.01" name="preco_custo" id="edit-custo" class="form-control">
                         </div>
                         <div class="col-6 mb-3">
-                            <label class="form-label">Estoque</label>
+                            <label class="form-label fw-bold text-success small">Venda (R$)</label>
+                            <input type="number" step="0.01" name="preco_venda" id="edit-venda" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-bold small">Estoque</label>
                             <input type="number" name="estoque_atual" id="edit-estoque" class="form-control" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-bold small">Categoria</label>
+                            <select name="categoria_id" id="edit-categoria" class="form-select">
+                                <option value="">Sem Categoria</option>
+                                {% for cat in categorias %}
+                                <option value="{{ cat.id }}">{{ cat.descricao }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-secondary w-100">Salvar Alterações</button>
+                <div class="modal-footer border-0">
+                    <button type="submit" class="btn btn-dark w-100 py-2 fw-bold">SALVAR ALTERAÇÕES</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
 <div class="modal fade" id="modalExcluirProduto" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">Confirmar?</h5>
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white border-0">
+                <h6 class="modal-title fw-bold">Excluir Produto?</h6>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body text-center">
-                <p>Deseja realmente excluir o produto <strong id="nome-excluir"></strong>?</p>
+            <div class="modal-body text-center py-4">
+                <p class="mb-0 text-muted">Deseja realmente excluir: <br><strong id="nome-excluir" class="text-danger"></strong>?</p>
             </div>
-            <div class="modal-footer">
-                <form id="formExcluir" method="POST">
-                    <button type="submit" class="btn btn-danger w-100">Sim, Excluir</button>
+            <div class="modal-footer border-0 pt-0">
+                <form id="formExcluir" method="POST" class="w-100">
+                    <button type="submit" class="btn btn-danger w-100 fw-bold shadow-sm">Sim, Confirmar Exclusão</button>
                 </form>
             </div>
         </div>
@@ -177,24 +231,31 @@
 </div>
 
 <script>
+    // Gerenciador do Modal de Edição
     var modalEditar = document.getElementById('modalEditarProduto');
     modalEditar.addEventListener('show.bs.modal', function (event) {
         var button = event.relatedTarget;
         
-        // Extrai as informações dos atributos data-
+        // Coleta os atributos data-
         var id = button.getAttribute('data-id');
         var nome = button.getAttribute('data-nome');
-        var preco = button.getAttribute('data-preco');
+        var custo = button.getAttribute('data-custo');
+        var venda = button.getAttribute('data-venda');
+        var categoria = button.getAttribute('data-categoria');
         var estoque = button.getAttribute('data-estoque');
 
-        // Preenche os campos do modal
+        // Mapeia para os inputs do formulário
         document.getElementById('edit-nome').value = nome;
-        document.getElementById('edit-preco').value = preco;
+        document.getElementById('edit-custo').value = custo;
+        document.getElementById('edit-venda').value = venda;
         document.getElementById('edit-estoque').value = estoque;
+        document.getElementById('edit-categoria').value = categoria;
         
-        // Ajusta o 'action' do formulário para o ID correto
+        // Define a URL correta no action do Form
         document.getElementById('formEditar').action = "/produtos/editar/" + id;
     });
+
+    // Gerenciador do Modal de Exclusão
     var modalExcluir = document.getElementById('modalExcluirProduto');
     modalExcluir.addEventListener('show.bs.modal', function (event) {
         var button = event.relatedTarget;

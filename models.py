@@ -46,20 +46,20 @@ class Usuario(db.Model, UserMixin):
 
 # -------------------------------------------------------------------------
 
-# 4. MODELO: PRODUTO (ESTOQUE)
-# Crie a classe de Produto herdando de db.Model.
 class Produto(db.Model):
-# Atributos:
-# - id: Inteiro, chave primária.
     id = db.Column(db.Integer, primary_key=True)
-# - papelaria_id: Inteiro, Chave Estrangeira apontando para Papelaria.
     papelaria_id = db.Column(db.Integer, db.ForeignKey('papelaria.id'), nullable=False)
-# - nome: Texto, obrigatório.
+    
     nome = db.Column(db.String(100), nullable=False)
-# - preco_venda: Numérico (db.Numeric com precisão de 2 casas decimais para dinheiro).
-    preco_venda = db.Column(db.Numeric(10, 2), nullable=False)
-# - estoque_atual: Inteiro, valor padrão inicial deve ser 0.
+    preco_custo = db.Column(db.Float, default=0.0) # Novo campo
+    preco_venda = db.Column(db.Float, nullable=False)
     estoque_atual = db.Column(db.Integer, default=0)
+    
+    # Relacionamento com Categoria
+    categoria_id = db.Column(db.Integer, db.ForeignKey('categoria.id'), nullable=True)
+
+    def __repr__(self):
+        return f'<Produto {self.nome}>'
 
 
 # -------------------------------------------------------------------------
@@ -104,3 +104,16 @@ class Movimentacao(db.Model):
     produto_id = db.Column(db.Integer, db.ForeignKey('produto.id'), nullable=True)
 #   IMPORTANTE: Este campo deve permitir valores nulos (nullable=True), 
 #   pois serviços avulsos não têm um produto associado.
+
+class Categoria(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    papelaria_id = db.Column(db.Integer, db.ForeignKey('papelaria.id'), nullable=False)
+    descricao = db.Column(db.String(100), nullable=False)
+    tipo = db.Column(db.String(50), nullable=False) # Ex: "Produto", "Serviço", "Despesa"
+    
+    # Relacionamento para contar quantos produtos usam esta categoria
+    # (Assumindo que adicionaremos categoria_id no modelo Produto depois)
+    produtos = db.relationship('Produto', backref='categoria', lazy=True)
+
+    def __repr__(self):
+        return f'<Categoria {self.descricao}>'
