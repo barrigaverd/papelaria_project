@@ -7,6 +7,7 @@ from app.routes.auth import auth
 from app.routes.main import main
 from app.routes.estoque import estoque
 from app.routes.vendas import vendas
+from app.routes.configuracoes import configuracoes
 from dotenv import load_dotenv
 # Instanciação das extensões (serão ligadas ao app depois)
 load_dotenv()
@@ -38,6 +39,7 @@ def create_app():
     app.register_blueprint(main)
     app.register_blueprint(estoque)
     app.register_blueprint(vendas, url_prefix='/vendas')
+    app.register_blueprint(configuracoes, url_prefix='/configuracoes')
     
     #   - Defina a rota de login padrão: login_manager.login_view = 'auth.login_cliente'
     login_manager.login_view = 'auth.login_cliente'

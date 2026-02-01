@@ -4,88 +4,99 @@
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="h4"><i class="bi bi-tags me-2"></i>Categorias</h2>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCategoria">
+        <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNovaCategoria">
             <i class="bi bi-plus-lg me-1"></i> Nova Categoria
         </button>
     </div>
 
     <div class="card shadow-sm border-0">
         <div class="card-body p-0">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th class="ps-4">Descrição</th>
-                        <th>Tipo</th>
-                        <th class="text-center">Itens Vinculados</th>
-                        <th class="text-end pe-4">Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for cat in categorias %}
-                    <tr>
-                        <td class="ps-4 fw-bold">{{ cat.descricao }}</td>
-                        <td><span class="badge bg-info text-dark">{{ cat.tipo }}</span></td>
-                        <td class="text-center">{{ cat.produtos|length }}</td>
-                        <td class="text-end pe-4">
-                            <button class="btn btn-sm btn-outline-primary me-2" 
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#modalEditar{{ cat.id }}">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            
-                            <form action="{{ url_for('main.excluir_categoria', id=cat.id) }}" method="POST" class="d-inline">
-                                <button type="submit" class="btn btn-sm btn-outline-danger" 
-                                        onclick="return confirm('Tem certeza que deseja excluir esta categoria?')">
-                                    <i class="bi bi-trash"></i>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Descrição</th>
+                            <th>Tipo</th>
+                            <th class="text-center">Itens Vinculados</th>
+                            <th class="text-end pe-4">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cat in categorias %}
+                        <tr>
+                            <td class="ps-4 fw-bold text-dark">{{ cat.descricao }}</td>
+                            <td><span class="badge bg-info-subtle text-info border border-info-subtle">{{ cat.tipo }}</span></td>
+                            <td class="text-center">
+                                <span class="badge rounded-pill bg-secondary">{{ cat.produtos|length }}</span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-outline-primary me-2" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#modalEditar{{ cat.id }}">
+                                    <i class="bi bi-pencil"></i>
                                 </button>
-                            </form>
-                        </td>
-                    </tr>
-
-                    <div class="modal fade" id="modalEditar{{ cat.id }}" tabindex="-1">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content">
-                                <form action="{{ url_for('main.editar_categoria', id=cat.id) }}" method="POST">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title">Editar Categoria</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <div class="mb-3">
-                                            <label class="form-label">Descrição</label>
-                                            <input type="text" name="descricao" class="form-control" value="{{ cat.descricao }}" required>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Tipo</label>
-                                            <select name="tipo" class="form-control" required>
-                                                <option value="Produto" {% if cat.tipo == 'Produto' %}selected{% endif %}>Produto</option>
-                                                <option value="Serviço" {% if cat.tipo == 'Serviço' %}selected{% endif %}>Serviço</option>
-                                                <option value="Outros" {% if cat.tipo == 'Outros' %}selected{% endif %}>Outros</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-                                    </div>
+                                
+                                <form action="{{ url_for('configuracoes.excluir_categoria', id=cat.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                            onclick="return confirm('Tem certeza que deseja excluir esta categoria?')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </form>
+                            </td>
+                        </tr>
+
+                        <div class="modal fade" id="modalEditar{{ cat.id }}" tabindex="-1">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content border-0 shadow">
+                                    <form action="{{ url_for('configuracoes.editar_categoria', id=cat.id) }}" method="POST">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Editar Categoria</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label class="form-label">Descrição</label>
+                                                <input type="text" name="descricao" class="form-control" value="{{ cat.descricao }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Tipo</label>
+                                                <select name="tipo" class="form-control" required>
+                                                    <option value="Produto" {% if cat.tipo == 'Produto' %}selected{% endif %}>Produto</option>
+                                                    <option value="Serviço" {% if cat.tipo == 'Serviço' %}selected{% endif %}>Serviço</option>
+                                                    <option value="Outros" {% if cat.tipo == 'Outros' %}selected{% endif %}>Outros</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer border-0">
+                                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                                        </div>
+                                    </form>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    {% endfor %}
-                </tbody>
-            </table>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                Nenhuma categoria cadastrada.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="modalCategoria" tabindex="-1">
+<div class="modal fade" id="modalNovaCategoria" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form method="POST">
-                <div class="modal-header">
+        <div class="modal-content border-0 shadow">
+            <form action="{{ url_for('configuracoes.nova_categoria') }}" method="POST">
+                <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title">Cadastrar Categoria</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
@@ -101,9 +112,9 @@
                         </select>
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer border-0">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Salvar Categoria</button>
+                    <button type="submit" class="btn btn-primary w-100">Salvar Categoria</button>
                 </div>
             </form>
         </div>

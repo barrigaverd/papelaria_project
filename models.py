@@ -101,6 +101,7 @@ class Movimentacao(db.Model):
 # - data: Data/Hora (db.DateTime, use o valor padrão datetime.utcnow).
     data = db.Column(db.DateTime, default=datetime.utcnow)
 # - produto_id: Inteiro, Chave Estrangeira apontando para Produto.
+    produto = db.relationship('Produto', backref='movimentacoes')
     produto_id = db.Column(db.Integer, db.ForeignKey('produto.id'), nullable=True)
 #   IMPORTANTE: Este campo deve permitir valores nulos (nullable=True), 
 #   pois serviços avulsos não têm um produto associado.
@@ -117,3 +118,12 @@ class Categoria(db.Model):
 
     def __repr__(self):
         return f'<Categoria {self.descricao}>'
+    
+class FormaPagamento(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    papelaria_id = db.Column(db.Integer, db.ForeignKey('papelaria.id'), nullable=False)
+    nome = db.Column(db.String(50), nullable=False) # Ex: Dinheiro, Pix, Cartão de Crédito
+    ativo = db.Column(db.Boolean, default=True)
+
+    def __repr__(self):
+        return f'<FormaPagamento {self.nome}>'

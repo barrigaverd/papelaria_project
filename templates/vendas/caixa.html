@@ -106,16 +106,14 @@
             <div class="modal-body text-center">
                 <h2 class="display-4 fw-bold text-success mb-4">R$ <span id="total-final-modal">0,00</span></h2>
                 
-                <label class="form-label fw-bold">Forma de Pagamento:</label>
-                <div class="d-grid gap-2">
-                    <input type="radio" class="btn-check" name="pagamento" id="pago_dinheiro" value="DINHEIRO" checked>
-                    <label class="btn btn-outline-dark btn-lg py-3" for="pago_dinheiro"><i class="bi bi-cash-stack me-2"></i>Dinheiro</label>
-
-                    <input type="radio" class="btn-check" name="pagamento" id="pago_pix" value="PIX">
-                    <label class="btn btn-outline-dark btn-lg py-3" for="pago_pix"><i class="bi bi-qr-code me-2"></i>Pix</label>
-
-                    <input type="radio" class="btn-check" name="pagamento" id="pago_cartao" value="CARTAO">
-                    <label class="btn btn-outline-dark btn-lg py-3" for="pago_cartao"><i class="bi bi-credit-card me-2"></i>Cartão</label>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Forma de Pagamento</label>
+                    <select id="forma_pagamento" class="form-select form-select-lg">
+                        <option value="" selected disabled>Selecione...</option>
+                        {% for forma in formas_pagamento %}
+                            <option value="{{ forma.nome }}">{{ forma.nome }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
             </div>
             <div class="modal-footer border-0">
@@ -193,21 +191,43 @@
     }
 
     // 4. Prepara o Modal de Pagamento com o Total
-    document.getElementById('modalPagamento').addEventListener('show.bs.modal', function () {
-        document.getElementById('total-final-modal').innerText = totalVenda.toFixed(2);
-    });
+document.getElementById('modalPagamento').addEventListener('show.bs.modal', function () {
+    document.getElementById('total-final-modal').innerText = totalVenda.toFixed(2);
+});
 
-    // 5. ENVIO FINAL PARA O PYTHON
+// 5. NOVA LÓGICA DE BUSCA EM TEMPO REAL
+document.querySelector('input[placeholder="Pesquisar produto..."]').addEventListener('input', function(e) {
+    const termo = e.target.value.toLowerCase();
+    const itens = document.querySelectorAll('.list-group-item');
+    
+    itens.forEach(item => {
+        const nome = item.querySelector('h6').innerText.toLowerCase();
+        if (nome.includes(termo)) {
+            item.classList.remove('d-none');
+            item.classList.add('d-flex');
+        } else {
+            item.classList.remove('d-flex');
+            item.classList.add('d-none');
+        }
+    });
+});
+
+// 6. ENVIO FINAL PARA O PYTHON (CORRIGIDO)
     async function enviarVenda() {
         const itens = [];
         const linhas = document.querySelectorAll('.item-cupom');
         
-        // Captura a forma de pagamento selecionada
-        const radioPagamento = document.querySelector('input[name="pagamento"]:checked');
-        const formaPagamento = radioPagamento ? radioPagamento.value : 'DINHEIRO';
+        // CORREÇÃO: Captura o valor do SELECT, não de um radio button
+        const selectPagamento = document.getElementById('forma_pagamento');
+        const formaPagamento = selectPagamento.value;
+
+        if (!formaPagamento) {
+            alert("⚠️ Por favor, selecione uma forma de pagamento!");
+            return;
+        }
 
         if (linhas.length === 0) {
-            alert("O cupom está vazio!");
+            alert("🛒 O cupom está vazio!");
             return;
         }
 
@@ -218,8 +238,6 @@
                 preco_venda: parseFloat(linha.getAttribute('data-preco'))
             });
         });
-
-        console.log("Enviando dados:", { itens, forma_pagamento: formaPagamento });
 
         try {
             const response = await fetch('/vendas/finalizar', {
@@ -235,13 +253,13 @@
 
             if (response.ok && result.status === 'success') {
                 alert("✅ Venda registrada com sucesso!");
-                window.location.reload(); // Agora deve recarregar
+                window.location.reload(); 
             } else {
-                alert("❌ Erro no servidor: " + (result.message || "Erro desconhecido"));
+                alert("❌ Erro: " + (result.message || "Erro desconhecido"));
             }
         } catch (error) {
             console.error("Erro na requisição:", error);
-            alert("🚀 Erro de conexão ou no JavaScript. Verifique o console (F12).");
+            alert("🚀 Erro de conexão. O servidor está rodando?");
         }
     }
 </script>
