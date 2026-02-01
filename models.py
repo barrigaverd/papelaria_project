@@ -99,7 +99,7 @@ class Movimentacao(db.Model):
     forma_pagamento = db.Column(db.String(20), nullable=True)
     quantidade = db.Column(db.Integer, nullable=False)
 # - data: Data/Hora (db.DateTime, use o valor padrão datetime.utcnow).
-    data = db.Column(db.DateTime, default=datetime.utcnow)
+    data = db.Column(db.DateTime, default=datetime.now)
 # - produto_id: Inteiro, Chave Estrangeira apontando para Produto.
     produto = db.relationship('Produto', backref='movimentacoes')
     produto_id = db.Column(db.Integer, db.ForeignKey('produto.id'), nullable=True)

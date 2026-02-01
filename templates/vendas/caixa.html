@@ -7,7 +7,7 @@
             <div class="card-header bg-white py-3">
                 <div class="input-group">
                     <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
-                    <input type="text" class="form-control bg-light border-start-0" placeholder="Pesquisar produto...">
+                    <input type="text" class="form-control bg-light border-start-0" placeholder="Pesquisar produto..." autofocus>
                 </div>
             </div>
             <div class="card-body overflow-auto p-0">
@@ -58,10 +58,15 @@
                         <span>TOTAL:</span>
                         <span class="fw-bold">R$ <span id="valor-total-cupom">0.00</span></span>
                     </div>
-                    <button class="btn btn-primary w-100 btn-lg shadow-sm" id="btn-finalizar" 
-                            data-bs-toggle="modal" data-bs-target="#modalPagamento" disabled>
-                        Finalizar Pagamento
-                    </button>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary w-50" id="btn-limpar" onclick="limparCupom()">
+                            <i class="bi bi-trash"></i> Limpar
+                        </button>
+                        <button class="btn btn-primary w-50 shadow-sm" id="btn-finalizar" 
+                                data-bs-toggle="modal" data-bs-target="#modalPagamento" disabled>
+                            Ir para Pagamento
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -97,29 +102,108 @@
     </div>
 </div>
 <div class="modal fade" id="modalPagamento" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">Finalizar Venda</h5>
+                <h5 class="modal-title fw-bold"><i class="bi bi-cash-stack me-2"></i>Finalizar Checkout</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body text-center">
-                <h2 class="display-4 fw-bold text-success mb-4">R$ <span id="total-final-modal">0,00</span></h2>
-                
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Forma de Pagamento</label>
-                    <select id="forma_pagamento" class="form-select form-select-lg">
-                        <option value="" selected disabled>Selecione...</option>
-                        {% for forma in formas_pagamento %}
-                            <option value="{{ forma.nome }}">{{ forma.nome }}</option>
-                        {% endfor %}
-                    </select>
+            <div class="modal-body bg-light">
+                <div class="row">
+                    <div class="col-md-7 border-end">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted">CLIENTE</label>
+                            <select id="cliente_id" class="form-select shadow-sm">
+                                <option value="">Consumidor Final (Não identificado)</option>
+                                {% for cliente in clientes %}
+                                    <option value="{{ cliente.id }}">{{ cliente.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="card shadow-sm mb-3">
+                            <div class="card-body">
+                                <label class="form-label fw-bold small text-muted">ADICIONAR PAGAMENTO</label>
+                                <div class="input-group">
+                                    <select id="select_forma" class="form-select">
+                                        {% for forma in formas_pagamento %}
+                                            <option value="{{ forma.nome }}">{{ forma.nome }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <input type="number" id="valor_parcial" class="form-control" placeholder="R$ 0,00" step="0.01">
+                                    <button class="btn btn-success" onclick="adicionarPagamento()">
+                                        <i class="bi bi-plus-circle"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <label class="form-label fw-bold small text-muted">PAGAMENTOS ADICIONADOS</label>
+                        <div id="lista-pagamentos" class="list-group shadow-sm mb-3" style="max-height: 150px; overflow-y: auto;">
+                            </div>
+                        
+                        <div class="mb-0">
+                            <label class="form-label fw-bold small text-muted">DATA DO LANÇAMENTO</label>
+                            <input type="date" id="data_venda" class="form-control shadow-sm" value="{{ now.strftime('%Y-%m-%d') }}">
+                        </div>
+                    </div>
+
+                    <div class="col-md-5">
+                        <div class="card bg-white h-100 border-0 shadow-sm text-center p-3">
+                            <div class="mb-4">
+                                <span class="text-muted d-block small">VALOR A PAGAR</span>
+                                <h3 class="text-dark fw-bold">R$ <span id="dash-total">0.00</span></h3>
+                            </div>
+                            <div class="mb-4">
+                                <span class="text-muted d-block small">VALOR PAGO</span>
+                                <h3 class="text-primary fw-bold">R$ <span id="dash-pago">0.00</span></h3>
+                            </div>
+                            <hr>
+                            <div id="container-troco">
+                                <span id="label-troco" class="text-muted d-block small">RESTANTE</span>
+                                <h2 id="valor-troco" class="display-6 fw-bold text-danger">R$ 0.00</h2>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-success btn-lg w-100 py-3 fw-bold" onclick="enviarVenda()">
-                    CONFIRMAR E FINALIZAR
+            <div class="modal-footer bg-white border-0">
+                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Voltar</button>
+                <button type="button" id="btn-confirmar-final" class="btn btn-success btn-lg px-5 fw-bold shadow-sm" onclick="enviarVenda()" disabled>
+                    FINALIZAR VENDA
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalSucesso" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-body text-center p-5">
+                <div class="mb-4">
+                    <i class="bi bi-check-circle-fill text-success" style="font-size: 5rem;"></i>
+                </div>
+                <h2 class="fw-bold text-dark">Venda Finalizada!</h2>
+                <p class="text-muted mb-4">O que deseja fazer agora?</p>
+                
+                <div class="d-grid gap-3">
+                    <button class="btn btn-primary btn-lg py-3 fw-bold shadow-sm" onclick="imprimirRecibo()">
+                        <i class="bi bi-printer me-2"></i> IMPRIMIR RECIBO
+                    </button>
+                    
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <a href="{{ url_for('vendas.relatorio') }}" class="btn btn-outline-dark w-100 py-2">
+                                <i class="bi bi-list-ul me-1"></i> Ver Relatórios
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <button class="btn btn-success w-100 py-2" onclick="window.location.reload()">
+                                <i class="bi bi-plus-lg me-1"></i> Nova Venda
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -151,28 +235,31 @@
         const lista = document.getElementById('lista-itens-cupom');
         // AJUSTE: Adicionamos data-id, data-qtd e data-preco na div para facilitar a leitura depois
         const itemHtml = `
-            <div class="d-flex justify-content-between align-items-start border-bottom mb-2 pb-2 item-cupom" 
+            <div class="item-cupom border-bottom mb-2 pb-2" 
                 data-id="${id}" data-qtd="${qtd}" data-preco="${preco.toFixed(2)}" data-subtotal="${subtotal}">
-                <div class="me-auto">
-                    <div class="fw-bold">${nome}</div>
-                    <small class="text-muted">${qtd} un x R$ ${preco.toFixed(2)}</small>
-                </div>
-                <div class="text-end">
-                    <div class="fw-bold">R$ ${subtotal.toFixed(2)}</div>
-                    <button class="btn btn-link btn-sm text-danger p-0" 
-                            onclick="removerItem(this, ${subtotal})">
-                        Remover
-                    </button>
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="me-auto">
+                        <div class="fw-bold">${nome}</div>
+                        <small class="text-muted">${qtd} un x R$ ${preco.toFixed(2)}</small>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold">R$ ${subtotal.toFixed(2)}</div>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-link text-primary p-0 me-2" onclick="reabrirAjuste('${id}', '${nome}', ${qtd}, ${preco})">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-link text-danger p-0" onclick="removerItem(this, ${subtotal})">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
         lista.insertAdjacentHTML('beforeend', itemHtml);
-
-        totalVenda += subtotal;
-        document.getElementById('valor-total-cupom').innerText = totalVenda.toFixed(2);
-        document.getElementById('btn-finalizar').disabled = false;
-
-        bootstrap.Modal.getInstance(modalAjuste).hide();
+        atualizarTotal(subtotal);
+        bootstrap.Modal.getInstance(document.getElementById('modalAjusteItem')).hide();
+        document.getElementById('campo-busca').focus(); // Devolve o foco para a busca
     }
 
     // 3. Remove item e atualiza total
@@ -189,18 +276,80 @@
             document.getElementById('btn-finalizar').disabled = true;
         }
     }
-
-    // 4. Prepara o Modal de Pagamento com o Total
+let pagamentos = [];
 document.getElementById('modalPagamento').addEventListener('show.bs.modal', function () {
-    document.getElementById('total-final-modal').innerText = totalVenda.toFixed(2);
+    document.getElementById('dash-total').innerText = totalVenda.toFixed(2);
+    // Sugere o valor total no campo de valor parcial para agilizar
+    document.getElementById('valor_parcial').value = (totalVenda - calcularTotalPago()).toFixed(2);
+    atualizarDashboard();
 });
 
-// 5. NOVA LÓGICA DE BUSCA EM TEMPO REAL
+function adicionarPagamento() {
+    const forma = document.getElementById('select_forma').value;
+    const valor = parseFloat(document.getElementById('valor_parcial').value);
+
+    if (isNaN(valor) || valor <= 0) return;
+
+    pagamentos.push({ forma, valor });
+    renderizarPagamentos();
+    atualizarDashboard();
+    
+    // Reseta o campo com o que ainda falta pagar
+    const faltante = totalVenda - calcularTotalPago();
+    document.getElementById('valor_parcial').value = faltante > 0 ? faltante.toFixed(2) : "0.00";
+}
+
+function calcularTotalPago() {
+    return pagamentos.reduce((acc, p) => acc + p.valor, 0);
+}
+
+function renderizarPagamentos() {
+    const lista = document.getElementById('lista-pagamentos');
+    lista.innerHTML = pagamentos.map((p, index) => `
+        <div class="list-group-item d-flex justify-content-between align-items-center py-2">
+            <span><i class="bi bi-check-circle-fill text-success me-2"></i>${p.forma}</span>
+            <div class="d-flex align-items-center">
+                <span class="fw-bold me-3">R$ ${p.valor.toFixed(2)}</span>
+                <button class="btn btn-sm btn-link text-danger p-0" onclick="removerPagamento(${index})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function removerPagamento(index) {
+    pagamentos.splice(index, 1);
+    renderizarPagamentos();
+    atualizarDashboard();
+}
+
+function atualizarDashboard() {
+    const pago = calcularTotalPago();
+    const restante = totalVenda - pago;
+
+    document.getElementById('dash-pago').innerText = pago.toFixed(2);
+    
+    const dashTroco = document.getElementById('valor-troco');
+    const labelTroco = document.getElementById('label-troco');
+
+    if (restante > 0) {
+        labelTroco.innerText = "RESTANTE";
+        dashTroco.innerText = `R$ ${restante.toFixed(2)}`;
+        dashTroco.className = "display-6 fw-bold text-danger";
+        document.getElementById('btn-confirmar-final').disabled = true;
+    } else {
+        labelTroco.innerText = "TROCO";
+        dashTroco.innerText = `R$ ${Math.abs(restante).toFixed(2)}`;
+        dashTroco.className = "display-6 fw-bold text-success";
+        document.getElementById('btn-confirmar-final').disabled = false;
+    }
+}
 document.querySelector('input[placeholder="Pesquisar produto..."]').addEventListener('input', function(e) {
     const termo = e.target.value.toLowerCase();
-    const itens = document.querySelectorAll('.list-group-item');
+    const produtos = document.querySelectorAll('.list-group-item');
     
-    itens.forEach(item => {
+    produtos.forEach(item => {
         const nome = item.querySelector('h6').innerText.toLowerCase();
         if (nome.includes(termo)) {
             item.classList.remove('d-none');
@@ -211,56 +360,123 @@ document.querySelector('input[placeholder="Pesquisar produto..."]').addEventList
         }
     });
 });
+// 6. ENVIO FINAL (Agora chamando o Modal de Sucesso)
+async function enviarVenda() {
+    const itens = [];
+    const linhas = document.querySelectorAll('.item-cupom');
+    const clienteId = document.getElementById('cliente_id').value;
+    const dataVenda = document.getElementById('data_venda').value;
 
-// 6. ENVIO FINAL PARA O PYTHON (CORRIGIDO)
-    async function enviarVenda() {
-        const itens = [];
-        const linhas = document.querySelectorAll('.item-cupom');
-        
-        // CORREÇÃO: Captura o valor do SELECT, não de um radio button
-        const selectPagamento = document.getElementById('forma_pagamento');
-        const formaPagamento = selectPagamento.value;
+    if (pagamentos.length === 0) {
+        alert("⚠️ Adicione pelo menos uma forma de pagamento!");
+        return;
+    }
 
-        if (!formaPagamento) {
-            alert("⚠️ Por favor, selecione uma forma de pagamento!");
-            return;
-        }
+    linhas.forEach(linha => {
+        itens.push({
+            produto_id: linha.getAttribute('data-id'), 
+            quantidade: parseInt(linha.getAttribute('data-qtd')),
+            preco_venda: parseFloat(linha.getAttribute('data-preco'))
+        });
+    });
 
-        if (linhas.length === 0) {
-            alert("🛒 O cupom está vazio!");
-            return;
-        }
-
-        linhas.forEach(linha => {
-            itens.push({
-                produto_id: linha.getAttribute('data-id'), 
-                quantidade: parseInt(linha.getAttribute('data-qtd')),
-                preco_venda: parseFloat(linha.getAttribute('data-preco'))
-            });
+    try {
+        const response = await fetch('/vendas/finalizar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                itens: itens,
+                pagamentos: pagamentos,
+                cliente_id: clienteId,
+                data_venda: dataVenda 
+            })
         });
 
-        try {
-            const response = await fetch('/vendas/finalizar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    itens: itens,
-                    forma_pagamento: formaPagamento 
-                })
-            });
+        const result = await response.json();
 
-            const result = await response.json();
-
-            if (response.ok && result.status === 'success') {
-                alert("✅ Venda registrada com sucesso!");
-                window.location.reload(); 
-            } else {
-                alert("❌ Erro: " + (result.message || "Erro desconhecido"));
-            }
-        } catch (error) {
-            console.error("Erro na requisição:", error);
-            alert("🚀 Erro de conexão. O servidor está rodando?");
+        if (response.ok && result.status === 'success') {
+            // Fecha o modal de pagamento e abre o de sucesso
+            bootstrap.Modal.getInstance(document.getElementById('modalPagamento')).hide();
+            new bootstrap.Modal(document.getElementById('modalSucesso')).show();
+        } else {
+            alert("❌ Erro: " + (result.message || "Erro desconhecido"));
         }
+    } catch (error) {
+        console.error("Erro:", error);
+        alert("🚀 Falha na conexão com o servidor.");
+    }
+}
+
+// 7. LÓGICA DE IMPRESSÃO SIMPLIFICADA
+function imprimirRecibo() {
+    // Para um sistema térmico real, usaríamos uma rota PDF. 
+    // Para agora, vamos gerar uma janela de impressão limpa com os dados do cupom.
+    const conteudoCupom = document.getElementById('lista-itens-cupom').innerHTML;
+    const total = document.getElementById('valor-total-cupom').innerText;
+    
+    const janelaImpressao = window.open('', '', 'width=400,height=600');
+    janelaImpressao.document.write(`
+        <html>
+            <head>
+                <title>Recibo de Venda</title>
+                <style>
+                    body { font-family: 'Courier New', Courier, monospace; width: 80mm; padding: 5px; }
+                    .text-center { text-align: center; }
+                    hr { border-top: 1px dashed #000; }
+                    .item { display: flex; justify-content: space-between; font-size: 12px; }
+                </style>
+            </head>
+            <body>
+                <h3 class="text-center">RECOIBO DE VENDA</h3>
+                <p class="text-center small">${new Date().toLocaleString()}</p>
+                <hr>
+                ${conteudoCupom}
+                <hr>
+                <h3 class="text-center">TOTAL: R$ ${total}</h3>
+                <p class="text-center">Obrigado pela preferência!</p>
+            </body>
+        </html>
+    `);
+    janelaImpressao.document.close();
+    janelaImpressao.print();
+}
+    function limparCupom() {
+        if (confirm("Deseja realmente limpar toda a lista?")) {
+            document.getElementById('lista-itens-cupom').innerHTML = `
+                <div id="aviso-vazio" class="text-center py-5 text-muted">
+                    <i class="bi bi-cart3 fs-1 d-block"></i> Aguardando produtos...
+                </div>`;
+            totalVenda = 0;
+            document.getElementById('valor-total-cupom').innerText = "0.00";
+            document.getElementById('btn-finalizar').disabled = true;
+            document.getElementById('campo-busca').focus();
+        }
+    }
+
+    function reabrirAjuste(id, nome, qtd, preco) {
+        // Abre o modal de ajuste já preenchido para edição rápida
+        document.getElementById('idProdutoModal').value = id;
+        document.getElementById('nomeProdutoModal').innerText = nome;
+        document.getElementById('precoModal').value = preco;
+        document.getElementById('qtdModal').value = qtd;
+        
+        // Removemos o item antigo antes de re-adicionar o editado
+        // (Pode ser melhorado para apenas atualizar, mas remover/adicionar é mais simples agora)
+        const itemAntigo = document.querySelector(`.item-cupom[data-id="${id}"]`);
+        if(itemAntigo) {
+            const sub = parseFloat(itemAntigo.getAttribute('data-subtotal'));
+            atualizarTotal(-sub);
+            itemAntigo.remove();
+        }
+        
+        new bootstrap.Modal(document.getElementById('modalAjusteItem')).show();
+    }
+
+    function atualizarTotal(valor) {
+        totalVenda += valor;
+        if (totalVenda < 0) totalVenda = 0;
+        document.getElementById('valor-total-cupom').innerText = totalVenda.toFixed(2);
+        document.getElementById('btn-finalizar').disabled = totalVenda <= 0;
     }
 </script>
 {% endblock %}

@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for # Adicione render_template, request e jsonify aqui
 from flask_login import login_required, current_user
-from models import Produto, Movimentacao, FormaPagamento # Garanta que Movimentacao esteja importado
+from models import Produto, Movimentacao, FormaPagamento, Cliente # Garanta que Movimentacao esteja importado
 from extensions import db
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -17,56 +17,45 @@ def caixa():
         papelaria_id=current_user.papelaria_id, 
         ativo=True
     ).all()
+    now=datetime.now()
+    clientes = Cliente.query.filter_by(papelaria_id=current_user.papelaria_id).all()
     
-    return render_template('vendas/caixa.html', produtos=produtos, formas_pagamento=formas_pagamento)
+    return render_template('vendas/caixa.html', produtos=produtos, formas_pagamento=formas_pagamento, now=now, clientes=clientes)
 
 @vendas.route('/finalizar', methods=['POST'])
 @login_required
 def finalizar():
     dados = request.get_json()
-    itens = dados.get('itens')
-    forma_pagamento = dados.get('forma_pagamento') # DINHEIRO, PIX ou CARTAO
+    itens = dados.get('itens', [])
+    lista_pagos = dados.get('pagamentos', []) # Agora é uma lista
+    data_str = dados.get('data_venda')
 
-    if not itens:
-        return jsonify({'status': 'error', 'message': 'O cupom está vazio.'}), 400
+    # Concatenamos as formas para o banco: "Dinheiro (R$ 10), Pix (R$ 20)"
+    formas_resumo = ", ".join([f"{p['forma']} (R$ {p['valor']:.2f})" for p in lista_pagos])
 
-    try:
-        # Iniciamos o processamento dos itens
-        for item in itens:
-            produto = Produto.query.get(item['produto_id'])
-            
-            # Verificação de segurança SaaS
-            if not produto or produto.papelaria_id != current_user.papelaria_id:
-                continue
+    if data_str:
+        data_final = datetime.combine(datetime.strptime(data_str, '%Y-%m-%d'), datetime.now().time())
+    else:
+        data_final = datetime.now()
 
-            qtd_vendida = int(item['quantidade'])
-            
-            # 1. Baixa o estoque no banco
-            produto.estoque_atual -= qtd_vendida
-
-            # 2. Registra a movimentação (Histórico de Vendas)
-            # DICA: Se o seu model Movimentacao ainda não tiver a coluna 'forma_pagamento',
-            # você pode adicionar depois. Por ora, vamos focar no registro da saída.
+    for item in itens:
+        produto = Produto.query.get(item['produto_id'])
+        if produto:
             nova_venda = Movimentacao(
                 produto_id=produto.id,
                 papelaria_id=current_user.papelaria_id,
                 tipo='SAIDA',
-                categoria='VENDA',           # Adicionado para resolver o erro da imagem
-                descricao='Venda PDV',       # Adicionado para evitar erro similar em 'descricao'
-                quantidade=qtd_vendida,
-                valor=float(item['preco_venda']) * qtd_vendida,
-                forma_pagamento=forma_pagamento, # Agora salvando o que veio do JavaScript
-                data=datetime.utcnow()
+                categoria='Venda PDV', # Categoria obrigatória
+                valor=item['preco_venda'] * item['quantidade'],
+                quantidade=item['quantidade'],
+                forma_pagamento=formas_resumo,
+                data=data_final
             )
+            produto.estoque_atual -= item['quantidade']
             db.session.add(nova_venda)
-
-        # 3. Salva todas as alterações de uma vez
-        db.session.commit()
-        return jsonify({'status': 'success', 'message': 'Venda finalizada com sucesso!'})
-
-    except Exception as e:
-        db.session.rollback() # Se der qualquer erro, cancela a baixa de estoque
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+    
+    db.session.commit()
+    return jsonify({'status': 'success'})
     
 @vendas.route('/relatorio')
 @login_required

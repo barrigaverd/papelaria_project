@@ -64,7 +64,7 @@
                     <tbody>
                         {% for venda in vendas %}
                         <tr>
-                            <td class="ps-4 small">{{ venda.data.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td class="ps-4 small">{{ venda.data.strftime('%d/%m/%Y') }}</td>
                             <td class="fw-bold text-dark">
                                 {{ venda.produto.nome if venda.produto else 'Avulso' }}
                             </td>
