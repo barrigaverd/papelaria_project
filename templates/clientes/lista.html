@@ -1,34 +1,42 @@
 {% extends "base.html" %}
+
 {% block content %}
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="h4"><i class="bi bi-people-fill me-2"></i>Clientes</h2>
-        <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNovoCliente">
-            <i class="bi bi-person-plus me-1"></i> Adicionar Cliente
+        <h2 class="h4 text-dark fw-bold">
+            <i class="bi bi-people-fill me-2 text-primary"></i>Gestão de Clientes
+        </h2>
+        <button class="btn btn-primary shadow-sm px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#modalNovoCliente">
+            <i class="bi bi-person-plus me-1"></i> NOVO CLIENTE
         </button>
     </div>
 
-    <div class="card border-0 shadow-sm mb-4">
+    <div class="card border-0 shadow-sm mb-4 bg-white">
         <div class="card-body">
             <form class="row g-2" method="GET">
                 <div class="col-md-10">
-                    <input type="text" name="search" class="form-control" placeholder="Buscar por nome..." value="{{ search }}">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                        <input type="text" name="search" class="form-control border-start-0 ps-0" 
+                               placeholder="Buscar por nome, CPF ou WhatsApp..." value="{{ search or '' }}">
+                    </div>
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-dark w-100">Buscar</button>
+                    <button type="submit" class="btn btn-dark w-100 fw-bold">FILTRAR</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <div class="card shadow-sm border-0">
+    <div class="card shadow-sm border-0 overflow-hidden">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th class="ps-4">Nome Completo</th>
-                            <th>Telefone</th>
+                            <th class="ps-4 py-3">Nome Completo</th>
+                            <th>WhatsApp</th>
+                            <th>Localização</th>
                             <th>Última Compra</th>
                             <th class="text-end pe-4">Ações</th>
                         </tr>
@@ -36,24 +44,104 @@
                     <tbody>
                         {% for c in pagination.items %}
                         <tr>
-                            <td class="ps-4 fw-bold">{{ c.nome }}</td>
-                            <td>{{ c.telefone or '---' }}</td>
+                            <td class="ps-4 fw-bold text-dark">{{ c.nome }}</td>
+                            <td>
+                                <a href="https://wa.me/{{ c.whatsapp|replace('(', '')|replace(')', '')|replace('-', '')|replace(' ', '') }}" 
+                                   target="_blank" class="text-decoration-none text-success fw-bold">
+                                    <i class="bi bi-whatsapp me-1"></i> {{ c.whatsapp }}
+                                </a>
+                            </td>
+                            <td class="small text-muted">
+                                {{ c.bairro or '---' }}{% if c.cidade %}, {{ c.cidade }}{% endif %}
+                            </td>
                             <td>
                                 {% if c.compras %}
-                                    {{ c.compras[-1].data.strftime('%d/%m/%Y') }}
+                                    <span class="badge bg-light text-dark border">
+                                        {{ c.compras[-1].data.strftime('%d/%m/%Y') }}
+                                    </span>
                                 {% else %}
-                                    <span class="text-muted small">Sem registros</span>
+                                    <span class="text-muted small italic">Sem registros</span>
                                 {% endif %}
                             </td>
                             <td class="text-end pe-4">
-                                <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#edit{{ c.id }}">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <form action="{{ url_for('clientes.excluir', id=c.id) }}" method="POST" class="d-inline">
-                                    <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Excluir cliente?')">
-                                        <i class="bi bi-trash"></i>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" 
+                                            data-bs-target="#modalEditarCliente{{ c.id }}" title="Editar">
+                                        <i class="bi bi-pencil-square"></i>
                                     </button>
-                                </form>
+                                    <form action="{{ url_for('clientes.excluir', id=c.id) }}" method="POST" class="d-inline ms-1">
+                                        <button class="btn btn-sm btn-outline-danger" 
+                                                onclick="return confirm('Excluir este cadastro permanentemente?')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <div class="modal fade" id="modalEditarCliente{{ c.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-lg modal-dialog-centered">
+                                <div class="modal-content border-0 shadow-lg">
+                                    <form action="{{ url_for('clientes.editar', id=c.id) }}" method="POST">
+                                        <div class="modal-header bg-primary text-white">
+                                            <h5 class="modal-title fw-bold">Editar Cadastro: {{ c.nome }}</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body p-4 text-start">
+                                            <div class="row g-3">
+                                                <div class="col-md-8">
+                                                    <label class="form-label fw-bold small">Nome Completo *</label>
+                                                    <input type="text" name="nome" class="form-control" value="{{ c.nome }}" required>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-bold small">WhatsApp *</label>
+                                                    <input type="text" name="whatsapp" class="form-control mask-whatsapp" value="{{ c.whatsapp }}" required>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold small">CPF</label>
+                                                    <input type="text" name="cpf" class="form-control mask-cpf" value="{{ c.cpf or '' }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold small">Data de Nascimento</label>
+                                                    <input type="date" name="data_nascimento" class="form-control" 
+                                                           value="{{ c.data_nascimento.strftime('%Y-%m-%d') if c.data_nascimento else '' }}">
+                                                </div>
+                                                <div class="col-12"><hr class="my-3"></div>
+                                                <div class="col-md-8">
+                                                    <label class="form-label fw-bold small">Logradouro (Rua, Av)</label>
+                                                    <input type="text" name="logradouro" class="form-control" value="{{ c.logradouro or '' }}">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-bold small">Bairro</label>
+                                                    <input type="text" name="bairro" class="form-control" value="{{ c.bairro or '' }}">
+                                                </div>
+                                                <div class="col-md-5">
+                                                    <label class="form-label fw-bold small">Cidade</label>
+                                                    <input type="text" name="cidade" class="form-control" value="{{ c.cidade or '' }}">
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label fw-bold small">Estado (UF)</label>
+                                                    <input type="text" name="estado" class="form-control text-uppercase" value="{{ c.estado or '' }}" maxlength="2">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-bold small">Complemento</label>
+                                                    <input type="text" name="complemento" class="form-control" value="{{ c.complemento or '' }}">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer bg-light border-0">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                                            <button type="submit" class="btn btn-primary px-4 fw-bold">SALVAR ALTERAÇÕES</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="bi bi-people fs-1 d-block mb-2"></i>
+                                Nenhum cliente encontrado.
                             </td>
                         </tr>
                         {% endfor %}
@@ -64,65 +152,81 @@
     </div>
 </div>
 
-<div class="modal fade" id="modalNovoCliente" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
+<div class="modal fade" id="modalNovoCliente" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
             <form action="{{ url_for('clientes.novo') }}" method="POST">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">Novo Cadastro</h5>
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold">Novo Cadastro de Cliente</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body p-4">
                     <div class="row g-3">
                         <div class="col-md-8">
-                            <label class="form-label fw-bold">Nome Completo *</label>
-                            <input type="text" name="nome" class="form-control" required>
+                            <label class="form-label fw-bold small">Nome Completo *</label>
+                            <input type="text" name="nome" class="form-control shadow-sm" placeholder="Nome do cliente" required>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-bold">WhatsApp *</label>
-                            <input type="text" name="whatsapp" class="form-control" placeholder="(00) 00000-0000" required>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold">CPF</label>
-                            <input type="text" name="cpf" class="form-control" placeholder="000.000.000-00">
+                            <label class="form-label fw-bold small">WhatsApp *</label>
+                            <input type="text" name="whatsapp" class="form-control shadow-sm mask-whatsapp" placeholder="(00) 00000-0000" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold">Data de Nascimento</label>
-                            <input type="date" name="data_nascimento" class="form-control">
+                            <label class="form-label fw-bold small">CPF</label>
+                            <input type="text" name="cpf" class="form-control shadow-sm mask-cpf" placeholder="000.000.000-00">
                         </div>
-
-                        <div class="col-md-12">
-                            <label class="form-label small fw-bold text-muted">ENDEREÇO</label>
-                            <hr class="mt-0 mb-2">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small">Data de Nascimento</label>
+                            <input type="date" name="data_nascimento" class="form-control shadow-sm">
                         </div>
+                        <div class="col-12"><hr class="my-3"></div>
                         <div class="col-md-8">
-                            <label class="form-label small fw-bold">Logradouro</label>
-                            <input type="text" name="logradouro" class="form-control" placeholder="Rua, Av...">
+                            <label class="form-label fw-bold small text-muted text-uppercase small">Logradouro</label>
+                            <input type="text" name="logradouro" class="form-control shadow-sm" placeholder="Ex: Rua das Flores, 123">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold">Bairro</label>
-                            <input type="text" name="bairro" class="form-control">
+                            <label class="form-label fw-bold small text-muted text-uppercase small">Bairro</label>
+                            <input type="text" name="bairro" class="form-control shadow-sm">
                         </div>
                         <div class="col-md-5">
-                            <label class="form-label small fw-bold">Cidade</label>
-                            <input type="text" name="cidade" class="form-control">
+                            <label class="form-label fw-bold small text-muted text-uppercase small">Cidade</label>
+                            <input type="text" name="cidade" class="form-control shadow-sm">
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label small fw-bold">Estado (UF)</label>
-                            <input type="text" name="estado" class="form-control" maxlength="2">
+                            <label class="form-label fw-bold small text-muted text-uppercase small">UF</label>
+                            <input type="text" name="estado" class="form-control shadow-sm text-uppercase" maxlength="2">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold">Complemento</label>
-                            <input type="text" name="complemento" class="form-control">
+                            <label class="form-label fw-bold small text-muted text-uppercase small">Complemento</label>
+                            <input type="text" name="complemento" class="form-control shadow-sm">
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0">
-                    <button type="submit" class="btn btn-primary w-100 py-2">Salvar Cliente</button>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="submit" class="btn btn-success w-100 py-2 fw-bold">SALVAR NOVO CLIENTE</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function(){
+        // Centralizamos a lógica de aplicação de máscaras
+        function initMasks() {
+            $('.mask-whatsapp').mask('(00) 00000-0000');
+            $('.mask-cpf').mask('000.000.000-00');
+        }
+
+        // 1. Aplica ao carregar a página principal
+        initMasks();
+
+        // 2. Re-aplica sempre que um modal for aberto (Bootstrap 5 event)
+        // Isso resolve o problema de modais dinâmicos do Jinja2
+        $(document).on('shown.bs.modal', '.modal', function () {
+            initMasks();
+        });
+    });
+</script>
 {% endblock %}

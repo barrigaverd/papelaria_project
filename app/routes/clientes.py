@@ -45,15 +45,42 @@ def novo():
     flash('Cliente cadastrado com sucesso!', 'success')
     return redirect(url_for('clientes.lista'))
 
+from datetime import datetime
+
 @clientes.route('/clientes/editar/<int:id>', methods=['POST'])
 @login_required
 def editar(id):
     cliente = Cliente.query.get_or_404(id)
-    if cliente.papelaria_id == current_user.papelaria_id:
-        cliente.nome = request.form.get('nome')
-        cliente.telefone = request.form.get('telefone')
+    
+    # Segurança: Verifica se o cliente pertence à papelaria do usuário logado
+    if cliente.papelaria_id != current_user.papelaria_id:
+        flash("Acesso não autorizado.", "danger")
+        return redirect(url_for('clientes.lista'))
+
+    # Atualizando os campos
+    cliente.nome = request.form.get('nome')
+    cliente.whatsapp = request.form.get('whatsapp')
+    cliente.logradouro = request.form.get('logradouro')
+    cliente.bairro = request.form.get('bairro')
+    cliente.cidade = request.form.get('cidade')
+    cliente.estado = request.form.get('estado')
+    cliente.complemento = request.form.get('complemento')
+    cliente.cpf = request.form.get('cpf')
+
+    # Tratamento da Data de Nascimento
+    data_nasc_str = request.form.get('data_nascimento')
+    if data_nasc_str:
+        cliente.data_nascimento = datetime.strptime(data_nasc_str, '%Y-%m-%d').date()
+    else:
+        cliente.data_nascimento = None
+
+    try:
         db.session.commit()
-        flash('Cadastro atualizado!', 'success')
+        flash(f"Cadastro de {cliente.nome} atualizado com sucesso!", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash("Erro ao atualizar cliente.", "danger")
+
     return redirect(url_for('clientes.lista'))
 
 @clientes.route('/clientes/excluir/<int:id>', methods=['POST'])

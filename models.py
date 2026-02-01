@@ -117,6 +117,7 @@ class Movimentacao(db.Model):
 
     cliente_id = db.Column(db.Integer, db.ForeignKey('cliente.id'), nullable=True)
     cliente = db.relationship('Cliente', backref='compras')
+    venda_id = db.Column(db.String(36), nullable=True)
 #   IMPORTANTE: Este campo deve permitir valores nulos (nullable=True), 
 #   pois serviços avulsos não têm um produto associado.
 
