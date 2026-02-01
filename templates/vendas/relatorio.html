@@ -54,6 +54,7 @@
                     <thead class="table-light">
                         <tr>
                             <th class="ps-4">Data/Hora</th>
+                            <th>Cliente</th>
                             <th>Produto</th>
                             <th>Qtd</th>
                             <th>Pagamento</th>
@@ -65,6 +66,7 @@
                         {% for venda in vendas %}
                         <tr>
                             <td class="ps-4 small">{{ venda.data.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ venda.cliente.nome if venda.cliente else 'Consumidor' }}</td>
                             <td class="fw-bold text-dark">
                                 {{ venda.produto.nome if venda.produto else 'Avulso' }}
                             </td>

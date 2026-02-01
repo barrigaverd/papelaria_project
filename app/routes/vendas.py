@@ -27,16 +27,18 @@ def caixa():
 def finalizar():
     dados = request.get_json()
     itens = dados.get('itens', [])
-    lista_pagos = dados.get('pagamentos', []) # Agora é uma lista
+    lista_pagos = dados.get('pagamentos', []) # Nova lista de pagamentos
+    cliente_id = dados.get('cliente_id') or None # Captura o cliente
     data_str = dados.get('data_venda')
-
-    # Concatenamos as formas para o banco: "Dinheiro (R$ 10), Pix (R$ 20)"
+    # Transforma a lista de pagamentos em texto: "Dinheiro (R$ 10.00), Pix (R$ 5.00)"
     formas_resumo = ", ".join([f"{p['forma']} (R$ {p['valor']:.2f})" for p in lista_pagos])
 
+    # Lógica de data (mantida)
     if data_str:
-        data_final = datetime.combine(datetime.strptime(data_str, '%Y-%m-%d'), datetime.now().time())
+        hora_agora = datetime.now().time()
+        data_venda_final = datetime.combine(datetime.strptime(data_str, '%Y-%m-%d'), hora_agora)
     else:
-        data_final = datetime.now()
+        data_venda_final = datetime.now()
 
     for item in itens:
         produto = Produto.query.get(item['produto_id'])
@@ -44,12 +46,13 @@ def finalizar():
             nova_venda = Movimentacao(
                 produto_id=produto.id,
                 papelaria_id=current_user.papelaria_id,
+                cliente_id=cliente_id, # SALVA O CLIENTE AQUI
                 tipo='SAIDA',
-                categoria='Venda PDV', # Categoria obrigatória
+                categoria='Venda PDV',
                 valor=item['preco_venda'] * item['quantidade'],
                 quantidade=item['quantidade'],
-                forma_pagamento=formas_resumo,
-                data=data_final
+                forma_pagamento=formas_resumo, # SALVA O RESUMO DOS PAGAMENTOS
+                data=data_venda_final 
             )
             produto.estoque_atual -= item['quantidade']
             db.session.add(nova_venda)

@@ -64,18 +64,29 @@ class Produto(db.Model):
 
 # -------------------------------------------------------------------------
 
-# 5. MODELO: CLIENTE
-# Crie a classe de Cliente herdando de db.Model.
+# No arquivo models.py
+
 class Cliente(db.Model):
-# Atributos:
-# - id: Inteiro, chave primária.
     id = db.Column(db.Integer, primary_key=True)
-# - papelaria_id: Inteiro, Chave Estrangeira apontando para Papelaria.
     papelaria_id = db.Column(db.Integer, db.ForeignKey('papelaria.id'), nullable=False)
-# - nome: Texto, obrigatório.
+    
+    # Dados Obrigatórios
     nome = db.Column(db.String(100), nullable=False)
-# - telefone: Texto (String).
-    telefone = db.Column(db.String(20))
+    whatsapp = db.Column(db.String(20), nullable=False)
+    
+    # Endereço (Opcionais)
+    logradouro = db.Column(db.String(150))
+    bairro = db.Column(db.String(100))
+    cidade = db.Column(db.String(100))
+    estado = db.Column(db.String(2)) # UF: SP, RJ, etc.
+    complemento = db.Column(db.String(100))
+    
+    # Documentação e Pessoal (Opcionais)
+    data_nascimento = db.Column(db.Date)
+    cpf = db.Column(db.String(14))
+
+    def __repr__(self):
+        return f'<Cliente {self.nome}>'
 
 
 # -------------------------------------------------------------------------
@@ -103,6 +114,9 @@ class Movimentacao(db.Model):
 # - produto_id: Inteiro, Chave Estrangeira apontando para Produto.
     produto = db.relationship('Produto', backref='movimentacoes')
     produto_id = db.Column(db.Integer, db.ForeignKey('produto.id'), nullable=True)
+
+    cliente_id = db.Column(db.Integer, db.ForeignKey('cliente.id'), nullable=True)
+    cliente = db.relationship('Cliente', backref='compras')
 #   IMPORTANTE: Este campo deve permitir valores nulos (nullable=True), 
 #   pois serviços avulsos não têm um produto associado.
 
