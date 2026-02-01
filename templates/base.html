@@ -67,6 +67,11 @@
                     <i class="bi bi-box-seam me-2"></i> Estoque / Produtos
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link {{ 'active' if request.endpoint == 'servicos.lista' }}" href="{{ url_for('servicos.lista') }}">
+                    <i class="bi bi-tools me-2"></i> Serviços
+                </a>
+            </li>
 
             <li class="nav-section-title">Configurações</li>
             <li>

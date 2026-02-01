@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="bi bi-file-earmark-bar-graph me-2"></i>Relatório de Vendas</h2>
+        <h2 class="fw-bold"><i class="bi bi-file-earmark-bar-graph me-2 text-primary"></i>Relatório de Vendas</h2>
         
         <form class="d-flex gap-2 align-items-end shadow-sm p-3 bg-white rounded border">
             <div>
@@ -14,14 +14,14 @@
                 <label class="form-label small fw-bold">Até:</label>
                 <input type="date" name="data_fim" class="form-control form-control-sm" value="{{ data_fim }}">
             </div>
-            <button type="submit" class="btn btn-primary btn-sm px-3">
-                <i class="bi bi-filter"></i> Filtrar
+            <button type="submit" class="btn btn-primary btn-sm px-3 fw-bold">
+                <i class="bi bi-filter"></i> FILTRAR
             </button>
         </form>
     </div>
 
     <div class="row g-3 mb-4 text-center">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card border-0 shadow-sm bg-success text-white">
                 <div class="card-body">
                     <h6 class="text-uppercase small opacity-75">Faturamento Total</h6>
@@ -29,15 +29,23 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card border-0 shadow-sm bg-primary text-white">
                 <div class="card-body">
-                    <h6 class="text-uppercase small opacity-75">Total de Pedidos</h6>
-                    <h3 class="fw-bold mb-0">{{ qtd_vendas }}</h3>
+                    <h6 class="text-uppercase small opacity-75">Venda de Produtos</h6>
+                    <h3 class="fw-bold mb-0">R$ {{ "%.2f"|format(total_produtos) }}</h3>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-info text-dark">
+                <div class="card-body">
+                    <h6 class="text-uppercase small opacity-75 fw-bold">Prestação de Serviços</h6>
+                    <h3 class="fw-bold mb-0">R$ {{ "%.2f"|format(total_servicos) }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
             <div class="card border-0 shadow-sm bg-dark text-white">
                 <div class="card-body">
                     <h6 class="text-uppercase small opacity-75">Ticket Médio</h6>
@@ -103,7 +111,7 @@
                                     <table class="table table-sm table-hover mb-0">
                                         <thead class="table-dark opacity-75">
                                             <tr class="small">
-                                                <th class="ps-3">Produto</th>
+                                                <th class="ps-3">Item (Produto/Serviço)</th>
                                                 <th class="text-center">Qtd</th>
                                                 <th class="text-center">Unitário</th>
                                                 <th class="text-center">Subtotal</th>
@@ -114,7 +122,16 @@
                                             {% for item in detalhes %}
                                                 {% if item.venda_id == venda.venda_id %}
                                                 <tr class="small">
-                                                    <td class="ps-3">{{ item.produto.nome if item.produto else 'Avulso' }}</td>
+                                                    <td class="ps-3">
+                                                        {% if item.produto %}
+                                                            <i class="bi bi-box me-1"></i> {{ item.produto.nome }}
+                                                        {% elif item.servico %}
+                                                            <i class="bi bi-tools text-info me-1"></i> <span class="fw-bold">{{ item.servico.descricao }}</span>
+                                                            <span class="badge bg-info text-dark ms-1 small" style="font-size: 0.6rem;">SERVIÇO</span>
+                                                        {% else %}
+                                                            <i class="bi bi-question-circle me-1"></i> Item Avulso
+                                                        {% endif %}
+                                                    </td>
                                                     <td class="text-center">{{ item.quantidade }} un.</td>
                                                     <td class="text-center">R$ {{ "%.2f"|format(item.valor / item.quantidade) }}</td>
                                                     <td class="text-center fw-bold">R$ {{ "%.2f"|format(item.valor) }}</td>
@@ -130,49 +147,6 @@
                                                     </td>
                                                 </tr>
 
-                                                <div class="modal fade" id="modalEditarVenda{{ item.id }}" tabindex="-1">
-                                                    <div class="modal-dialog modal-dialog-centered">
-                                                        <div class="modal-content border-0 shadow">
-                                                            <form action="{{ url_for('vendas.editar_venda_item', id=item.id) }}" method="POST">
-                                                                <div class="modal-header bg-dark text-white">
-                                                                    <h5 class="modal-title small">Editar Item</h5>
-                                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                                                </div>
-                                                                <div class="modal-body">
-                                                                    <div class="row g-3">
-                                                                        <div class="col-6">
-                                                                            <label class="form-label small fw-bold">Quantidade</label>
-                                                                            <input type="number" name="quantidade" class="form-control" value="{{ item.quantidade }}" required>
-                                                                        </div>
-                                                                        <div class="col-6">
-                                                                            <label class="form-label small fw-bold">Preço Unitário</label>
-                                                                            <input type="number" step="0.01" name="preco_venda" class="form-control" value="{{ (item.valor / item.quantidade)|round(2) }}" required>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="modal-footer border-0">
-                                                                    <button type="submit" class="btn btn-primary w-100">Salvar Item</button>
-                                                                </div>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div class="modal fade" id="modalExcluirVenda{{ item.id }}" tabindex="-1">
-                                                    <div class="modal-dialog modal-sm modal-dialog-centered">
-                                                        <div class="modal-content border-0 shadow">
-                                                            <div class="modal-header bg-danger text-white border-0">
-                                                                <h6 class="modal-title">Estornar Item?</h6>
-                                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                                            </div>
-                                                            <div class="modal-footer border-0">
-                                                                <form action="{{ url_for('vendas.excluir_venda', id=item.id) }}" method="POST" class="w-100">
-                                                                    <button type="submit" class="btn btn-danger w-100 fw-bold">CONFIRMAR</button>
-                                                                </form>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
                                                 {% endif %}
                                             {% endfor %}
                                         </tbody>
@@ -185,17 +159,17 @@
                         <div class="modal fade" id="modalEstornoTicket{{ loop.index }}" tabindex="-1" aria-hidden="true">
                             <div class="modal-dialog modal-dialog-centered">
                                 <div class="modal-content border-0 shadow">
-                                    <div class="modal-header bg-danger text-white">
-                                        <h5 class="modal-title">Estorno Total da Venda</h5>
+                                    <div class="modal-header bg-danger text-white border-0">
+                                        <h5 class="modal-title fw-bold">Estornar Venda Completa</h5>
                                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                     </div>
                                     <div class="modal-body text-center py-4">
-                                        <p>Você vai cancelar a venda <strong>#{{ venda.venda_id }}</strong> completa.</p>
-                                        <p class="fw-bold text-danger h5">R$ {{ "%.2f"|format(venda.total_venda) }}</p>
-                                        <p class="mb-0 text-muted small">Todos os produtos voltarão ao estoque.</p>
+                                        <p>Você confirma o cancelamento total do ticket <strong>#{{ venda.venda_id }}</strong>?</p>
+                                        <p class="text-danger fw-bold h4">R$ {{ "%.2f"|format(venda.total_venda) }}</p>
+                                        <p class="mb-0 text-muted small">Os produtos voltarão ao estoque e o faturamento será deduzido.</p>
                                     </div>
-                                    <div class="modal-footer border-0">
-                                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Voltar</button>
+                                    <div class="modal-footer border-0 bg-light">
+                                        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Voltar</button>
                                         <form action="{{ url_for('vendas.estornar_ticket', venda_id=venda.venda_id) }}" method="POST">
                                             <button type="submit" class="btn btn-danger px-4 fw-bold">SIM, CANCELAR TUDO</button>
                                         </form>
@@ -207,7 +181,10 @@
 
                         {% else %}
                         <tr>
-                            <td colspan="6" class="text-center py-5 text-muted">Nenhuma venda encontrada.</td>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-search fs-1 d-block mb-2"></i>
+                                Nenhuma venda encontrada no período selecionado.
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>

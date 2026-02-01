@@ -113,7 +113,9 @@ class Movimentacao(db.Model):
     data = db.Column(db.DateTime, default=datetime.now)
 # - produto_id: Inteiro, Chave Estrangeira apontando para Produto.
     produto = db.relationship('Produto', backref='movimentacoes')
+    servico = db.relationship('Servico', backref='movimentacoes')
     produto_id = db.Column(db.Integer, db.ForeignKey('produto.id'), nullable=True)
+    servico_id = db.Column(db.Integer, db.ForeignKey('servico.id'), nullable=True)
 
     cliente_id = db.Column(db.Integer, db.ForeignKey('cliente.id'), nullable=True)
     cliente = db.relationship('Cliente', backref='compras')
@@ -142,3 +144,16 @@ class FormaPagamento(db.Model):
 
     def __repr__(self):
         return f'<FormaPagamento {self.nome}>'
+    
+class Servico(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    descricao = db.Column(db.String(150), nullable=False)
+    custo = db.Column(db.Float, default=0.0)
+    preco = db.Column(db.Float, nullable=False)
+    observacao = db.Column(db.Text)
+    
+    # Relacionamento com Categoria (Reutilizando as existentes)
+    categoria_id = db.Column(db.Integer, db.ForeignKey('categoria.id'))
+    categoria = db.relationship('Categoria', backref='servicos')
+    
+    papelaria_id = db.Column(db.Integer, db.ForeignKey('papelaria.id'))
