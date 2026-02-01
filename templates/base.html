@@ -31,6 +31,9 @@
             color: rgba(255,255,255,0.4); 
             padding: 1.5rem 1rem 0.5rem;
         }
+        .bg-success-light { background-color: #d1e7dd; }
+        .bg-warning-light { background-color: #fff3cd; }
+        .table-danger-light { background-color: #f8d7da !important; }
     </style>
 </head>
 <body>
@@ -70,6 +73,11 @@
             <li class="nav-item">
                 <a class="nav-link {{ 'active' if request.endpoint == 'servicos.lista' }}" href="{{ url_for('servicos.lista') }}">
                     <i class="bi bi-tools me-2"></i> Serviços
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ 'active' if request.endpoint == 'despesas.lista' }}" href="{{ url_for('despesas.lista') }}">
+                    <i class="bi bi-cash-stack me-2"></i> Despesas (Contas a Pagar)
                 </a>
             </li>
 

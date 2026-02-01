@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .bg-success-light { background-color: #d1e7dd; color: #0a58ca; }
+    .bg-warning-light { background-color: #fff3cd; color: #664d03; }
+    .table-danger-light { background-color: #f8d7da !important; }
+    .badge-status { font-weight: bold; border-radius: 20px; }
+</style>
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h4 fw-bold"><i class="bi bi-calendar-check me-2 text-danger"></i>Contas a Pagar</h2>
+        <button class="btn btn-danger shadow-sm fw-bold px-4" data-bs-toggle="modal" data-bs-target="#modalNovaDespesa">
+            <i class="bi bi-plus-circle me-1"></i> LANÇAR DESPESA
+        </button>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form class="row g-3 align-items-end" method="GET">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">Vencimento de:</label>
+                    <input type="date" name="data_inicio" class="form-control shadow-sm" value="{{ data_inicio }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">Até:</label>
+                    <input type="date" name="data_fim" class="form-control shadow-sm" value="{{ data_fim }}">
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-dark w-100 fw-bold">
+                        <i class="bi bi-filter me-1"></i> FILTRAR PERÍODO
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm bg-white border-start border-danger border-5">
+                <div class="card-body">
+                    <h6 class="text-muted small text-uppercase fw-bold">Pendente no Período</h6>
+                    <h3 class="fw-bold text-danger mb-0">R$ {{ "%.2f"|format(total_pendente) }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm bg-white border-start border-success border-5">
+                <div class="card-body">
+                    <h6 class="text-muted small text-uppercase fw-bold">Pago no Período</h6>
+                    <h3 class="fw-bold text-success mb-0">R$ {{ "%.2f"|format(total_pago) }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Descrição</th>
+                            <th>Categoria</th>
+                            <th>Vencimento</th>
+                            <th>Valor</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for d in despesas %}
+                        <tr class="{% if d.status == 'Pendente' and d.data_vencimento < now.date() %}table-danger-light{% endif %}">
+                            <td class="ps-4">
+                                <span class="fw-bold d-block text-dark">{{ d.descricao }}</span>
+                                <small class="text-muted">{{ d.observacao or '' }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary opacity-75">{{ d.categoria.descricao }}</span>
+                            </td>
+                            <td>{{ d.data_vencimento.strftime('%d/%m/%Y') }}</td>
+                            <td class="fw-bold text-dark">R$ {{ "%.2f"|format(d.valor) }}</td>
+                            <td>
+                                {% if d.status == 'Pago' %}
+                                    <span class="badge bg-success-light text-success px-3 py-2">PAGO</span>
+                                {% else %}
+                                    <span class="badge bg-warning-light text-warning px-3 py-2">PENDENTE</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                {% if d.status == 'Pendente' %}
+                                <form action="{{ url_for('despesas.pagar', id=d.id) }}" method="POST" class="d-inline">
+                                    <button class="btn btn-sm btn-success fw-bold px-3">BAIXAR</button>
+                                </form>
+                                {% endif %}
+                                <form action="{{ url_for('despesas.excluir', id=d.id) }}" method="POST" class="d-inline">
+                                    <button class="btn btn-sm btn-outline-secondary ms-1" onclick="return confirm('Excluir?')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">Nenhuma despesa para este período.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalNovaDespesa" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <form action="{{ url_for('despesas.novo') }}" method="POST">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold">Lançar Nova Despesa</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-bold small">Descrição da Conta *</label>
+                            <input type="text" name="descricao" class="form-control shadow-sm" placeholder="Ex: Aluguel, Internet, Fornecedor X" required>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-bold small">Categoria de Despesa *</label>
+                            {# Bloqueia o select se não houver categorias #}
+                            <select name="categoria_id" class="form-select shadow-sm" required {% if not categorias %}disabled{% endif %}>
+                                {% if categorias %}
+                                    <option value="">Selecione uma categoria...</option>
+                                    {% for cat in categorias %}
+                                        <option value="{{ cat.id }}">{{ cat.descricao }}</option>
+                                    {% endfor %}
+                                {% else %}
+                                    <option value="">⚠️ Cadastre uma categoria de Despesa primeiro!</option>
+                                {% endif %}
+                            </select>
+                        </div>
+
+                        <div class="col-6">
+                            <label class="form-label fw-bold small">Valor (R$) *</label>
+                            <input type="number" step="0.01" name="valor" class="form-control shadow-sm" placeholder="0.00" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold small">Data de Vencimento *</label>
+                            <input type="date" name="data_vencimento" class="form-control shadow-sm" required>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-muted">Observações Adicionais</label>
+                            <textarea name="observacao" class="form-control shadow-sm" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    {# Bloqueia o botão de salvar se não houver categorias #}
+                    <button type="submit" class="btn btn-danger w-100 py-2 fw-bold shadow" {% if not categorias %}disabled{% endif %}>
+                        {% if categorias %}
+                            CADASTRAR CONTA
+                        {% else %}
+                            AÇÃO BLOQUEADA: SEM CATEGORIAS
+                        {% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

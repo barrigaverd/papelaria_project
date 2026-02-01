@@ -157,3 +157,19 @@ class Servico(db.Model):
     categoria = db.relationship('Categoria', backref='servicos')
     
     papelaria_id = db.Column(db.Integer, db.ForeignKey('papelaria.id'))
+
+class Despesa(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    descricao = db.Column(db.String(150), nullable=False)
+    valor = db.Column(db.Float, nullable=False)
+    data_vencimento = db.Column(db.Date, nullable=False)
+    data_pagamento = db.Column(db.Date, nullable=True)
+    status = db.Column(db.String(20), default='Pendente') # Pendente, Pago
+    observacao = db.Column(db.Text)
+    
+    # Relacionamento com Categoria (usando a sua classe existente)
+    categoria_id = db.Column(db.Integer, db.ForeignKey('categoria.id'), nullable=False)
+    categoria = db.relationship('Categoria', backref='despesas')
+    # Categoria terá um backref 'despesas' automaticamente se você usar relationship
+    
+    papelaria_id = db.Column(db.Integer, db.ForeignKey('papelaria.id'))
