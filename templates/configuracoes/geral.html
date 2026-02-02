@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h2 class="fw-bold mb-4">Configurações do Sistema</h2>
+
+    <form method="POST" enctype="multipart/form-data">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body text-center">
+                        <label class="form-label fw-bold d-block mb-3">Logo da Empresa</label>
+                        <div class="mb-3">
+                            {% if papelaria.logo_path %}
+                                <img src="{{ url_for('static', filename=papelaria.logo_path) }}" class="img-thumbnail shadow-sm" style="max-height: 150px;">
+                            {% else %}
+                                <div class="bg-light border rounded py-5 text-muted">
+                                    <i class="bi bi-image fs-1"></i><br>Sem Logo
+                                </div>
+                            {% endif %}
+                        </div>
+                        <input type="file" name="logo" class="form-control form-control-sm">
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white fw-bold">Segurança</div>
+                    <div class="card-body">
+                        <label class="form-label small">Alterar Senha de Acesso</label>
+                        <div class="input-group">
+                            <input type="password" name="nova_senha" id="inputSenha" class="form-control" placeholder="Deixe em branco para manter">
+                            <button class="btn btn-outline-secondary" type="button" onclick="toggleSenha()">
+                                <i class="bi bi-eye" id="iconSenha"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white fw-bold">Dados Principais</div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label">Nome Fantasia</label>
+                                <input type="text" name="nome_fantasia" class="form-control" value="{{ papelaria.nome_fantasia }}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">CPF / CNPJ</label>
+                                <input type="text" name="cnpj_cpf" class="form-control mask-cpf-cnpj" value="{{ papelaria.cnpj_cpf or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">E-mail de Contato</label>
+                                <input type="email" name="email" class="form-control" value="{{ papelaria.email or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Telefone de Contato</label>
+                                <input type="text" name="telefones" class="form-control mask-phone" value="{{ papelaria.telefones or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Chave PIX</label>
+                                <input type="text" name="chave_pix" class="form-control" value="{{ papelaria.chave_pix or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Site / Redes Sociais</label>
+                                <input type="text" name="site" class="form-control" value="{{ papelaria.site or '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white fw-bold">Endereço</div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">CEP</label>
+                                <input type="text" name="cep" id="cep" class="form-control mask-cep" value="{{ papelaria.cep or '' }}">
+                            </div>
+                            <div class="col-md-7">
+                                <label class="form-label">Logradouro</label>
+                                <input type="text" name="logradouro" id="logradouro" class="form-control" value="{{ papelaria.logradouro or '' }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Nº</label>
+                                <input type="text" name="numero" class="form-control" value="{{ papelaria.numero or '' }}">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">Bairro</label>
+                                <input type="text" name="bairro" id="bairro" class="form-control" value="{{ papelaria.bairro or '' }}">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">Cidade</label>
+                                <input type="text" name="cidade" id="cidade" class="form-control" value="{{ papelaria.cidade or '' }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">UF</label>
+                                <input type="text" name="estado" id="uf" class="form-control" value="{{ papelaria.estado or '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary btn-lg px-5 shadow">Salvar Configurações</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 1. MÁSCARAS (JQUERY MASK)
+    $(document).ready(function(){
+        // Máscara dinâmica para CPF ou CNPJ
+        var options = {
+            onKeyPress: function (val, e, field, options) {
+                field.mask(val.length > 14 ? '00.000.000/0000-00' : '000.000.000-009', options);
+            }
+        };
+        $('.mask-cpf-cnpj').mask($('.mask-cpf-cnpj').val().length > 14 ? '00.000.000/0000-00' : '000.000.000-009', options);
+        
+        // Máscara de Telefone (Fixo ou Celular)
+        $('.mask-phone').mask('(00) 00000-0000');
+        
+        // Máscara de CEP
+        $('.mask-cep').mask('00000-000');
+    });
+
+    // 2. TOGGLE SENHA (OLHINHO)
+    function toggleSenha() {
+        const input = document.getElementById('inputSenha');
+        const icon = document.getElementById('iconSenha');
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.replace('bi-eye', 'bi-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.replace('bi-eye-slash', 'bi-eye');
+        }
+    }
+
+    // 3. VIA CEP
+    document.getElementById('cep').addEventListener('blur', function() {
+        let cep = this.value.replace(/\D/g, '');
+        if (cep != "") {
+            fetch(`https://viacep.com.br/ws/${cep}/json/`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data.erro) {
+                    document.getElementById('logradouro').value = data.logradouro;
+                    document.getElementById('bairro').value = data.bairro;
+                    document.getElementById('cidade').value = data.localidade;
+                    document.getElementById('uf').value = data.uf;
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

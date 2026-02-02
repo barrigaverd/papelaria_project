@@ -93,7 +93,7 @@
                         <div class="mb-3">
                             <label class="form-label fw-bold small text-muted">CLIENTE</label>
                             <select id="cliente_id" class="form-select shadow-sm">
-                                <option value="">Consumidor Final</option>
+                                <option value=""></option>
                                 {% for cliente in clientes %}
                                     <option value="{{ cliente.id }}">{{ cliente.nome }}</option>
                                 {% endfor %}
@@ -145,17 +145,20 @@
     </div>
 </div>
 
-<div class="modal fade" id="modalSucesso" data-bs-backdrop="static" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg text-center p-5">
-            <i class="bi bi-check-circle-fill text-success" style="font-size: 5rem;"></i>
-            <h2 class="fw-bold">Venda Finalizada!</h2>
-            <div class="d-grid gap-2 mt-4">
-                <button class="btn btn-primary py-3 fw-bold" onclick="window.location.reload()">NOVA VENDA</button>
-                <a href="{{ url_for('vendas.relatorio') }}" class="btn btn-outline-dark">VER RELATÓRIO</a>
+<div class="modal fade" id="modalSucesso" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"> <div class="modal-content border-0 shadow-lg text-center p-5">
+            <div class="modal-body"> <i class="bi bi-check-circle-fill text-success" style="font-size: 5rem;"></i>
+                <h2 class="fw-bold mt-3">Venda Finalizada!</h2>
+                <div class="d-grid gap-2 mt-4">
+                    <button class="btn btn-success py-3 fw-bold" onclick="imprimirCupom()">
+                        <i class="bi bi-printer me-2"></i> IMPRIMIR CUPOM
+                    </button>
+                    <button class="btn btn-primary py-3 fw-bold" onclick="window.location.reload()">NOVA VENDA</button>
+                    <a href="{{ url_for('vendas.relatorio') }}" class="btn btn-link text-muted text-decoration-none">Ver Relatório</a>
+                </div>
             </div>
         </div>
-    </div>
+    </div> 
 </div>
 {% endblock %}
 
@@ -163,16 +166,24 @@
 <script>
     let totalVenda = 0;
     let pagamentos = [];
+    let itensAtuais = []; // <--- ADICIONADO: Variável global essencial para o Enter
 
-    // 1. Busca AJAX
     const campoBusca = document.getElementById('campo-busca');
     const listaBusca = document.getElementById('lista-busca');
 
-    campoBusca.addEventListener('input', async function(e) {
-        const query = e.target.value;
-        if (query.length < 2) return;
+    // 1. FUNÇÃO PARA BUSCAR E RENDERIZAR
+    async function carregarItens(query = "") {
         const response = await fetch(`/vendas/buscar_itens?q=${query}`);
         const itens = await response.json();
+        
+        // --- ADICIONADO: Salva os itens na variável global para o Enter funcionar ---
+        itensAtuais = itens; 
+
+        if (itens.length === 0) {
+            listaBusca.innerHTML = '<div class="text-center py-5 text-muted">Nenhum item encontrado.</div>';
+            return;
+        }
+
         listaBusca.innerHTML = itens.map(item => `
             <div class="list-group-item d-flex justify-content-between align-items-center py-3">
                 <div>
@@ -184,15 +195,45 @@
                     <i class="bi bi-plus-lg"></i>
                 </button>
             </div>`).join('');
+    }
+
+    // --- TURBO DO ENTER (CORRIGIDO) ---
+    campoBusca.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault(); 
+
+            // Verifica se a lista global de itens tem exatamente um item
+            if (itensAtuais && itensAtuais.length === 1) {
+                const item = itensAtuais[0];
+                abrirAjuste(item.id, item.nome, item.preco, item.tipo);
+            } 
+            else if (itensAtuais && itensAtuais.length > 1) {
+                // Opcional: Você pode emitir um som ou aviso visual aqui
+                console.log("Muitos itens na lista, seja mais específico.");
+            }
+        }
     });
 
-    // 2. Lógica do Cupom
+    // 2. EXECUTAR AO CARREGAR A PÁGINA
+    window.addEventListener('DOMContentLoaded', (event) => {
+        campoBusca.focus();
+        carregarItens(); // Carrega todos os itens em ordem alfabética
+    });
+
+    // 3. EVENTO DE DIGITAÇÃO
+    campoBusca.addEventListener('input', function(e) {
+        carregarItens(e.target.value);
+    });
+
+    // 4. Lógica do Cupom
     function abrirAjuste(id, nome, preco, tipo) {
         document.getElementById('idItemModal').value = id;
         document.getElementById('tipoItemModal').value = tipo;
         document.getElementById('nomeItemModal').innerText = nome;
         document.getElementById('precoModal').value = preco;
-        new bootstrap.Modal(document.getElementById('modalAjusteItem')).show();
+        
+        const meuModal = new bootstrap.Modal(document.getElementById('modalAjusteItem'));
+        meuModal.show();
     }
 
     function confirmarInclusao() {
@@ -216,9 +257,18 @@
         
         document.getElementById('lista-itens-cupom').insertAdjacentHTML('beforeend', itemHtml);
         atualizarTotal(subtotal);
-        bootstrap.Modal.getInstance(document.getElementById('modalAjusteItem')).hide();
-        campoBusca.value = ""; campoBusca.focus();
+        
+        // Fecha o modal e limpa busca
+        const modalEl = document.getElementById('modalAjusteItem');
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (modalInstance) modalInstance.hide();
+
+        campoBusca.value = "";
+        carregarItens(); // Volta para a lista completa alfabética
+        campoBusca.focus();
     }
+
+    // --- (As demais funções: atualizarTotal, removerItem, adicionarPagamento, etc. permanecem as mesmas) ---
 
     function atualizarTotal(valor) {
         totalVenda += valor;
@@ -231,7 +281,6 @@
         atualizarTotal(-valorItem);
     }
 
-    // 3. Lógica de Pagamento
     function adicionarPagamento() {
         const forma = document.getElementById('select_forma').value;
         const valor = parseFloat(document.getElementById('valor_parcial').value);
@@ -239,6 +288,7 @@
         pagamentos.push({ forma, valor });
         renderizarPagamentos();
         atualizarDashboard();
+        document.getElementById('valor_parcial').value = ""; // Limpa o campo após adicionar
     }
 
     function renderizarPagamentos() {
@@ -271,28 +321,117 @@
             document.getElementById('btn-confirmar-final').disabled = false;
         }
     }
-
+    let ultimaVendaId = null;
     async function enviarVenda() {
+        // 1. Captura o ID do cliente
+        const clienteId = document.getElementById('cliente_id').value;
+
+        // 2. Validação: Se o cliente estiver vazio (string vazia), exibe alerta e para a execução
+        if (!clienteId) {
+            alert("⚠️ Operação bloqueada: Por favor, selecione um cliente para finalizar a venda.");
+            document.getElementById('cliente_id').focus(); // Dá foco no campo para facilitar
+            return; // O 'return' impede que o código abaixo seja executado
+        }
+
         const itens = [];
         document.querySelectorAll('.item-cupom').forEach(el => {
-            itens.push({ id: el.dataset.id, tipo: el.dataset.tipo, quantidade: el.dataset.qtd, preco: el.dataset.preco });
+            itens.push({ 
+                id: el.dataset.id, 
+                tipo: el.dataset.tipo, 
+                quantidade: el.dataset.qtd, 
+                preco: el.dataset.preco 
+            });
         });
+
         const dados = {
-            itens: itens, pagamentos: pagamentos,
-            cliente_id: document.getElementById('cliente_id').value,
+            itens: itens, 
+            pagamentos: pagamentos,
+            cliente_id: clienteId, // Usando a variável validada
             data_venda: document.getElementById('data_venda').value
         };
+
         const resp = await fetch('/vendas/finalizar', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(dados)
         });
+
         if (resp.ok) {
-            bootstrap.Modal.getInstance(document.getElementById('modalPagamento')).hide();
-            new bootstrap.Modal(document.getElementById('modalSucesso')).show();
+            const resultado = await resp.json();
+            ultimaVendaId = resultado.venda_id;
+
+            // 1. Pega a instância do modal de pagamento e esconde
+            const modalPagEl = document.getElementById('modalPagamento');
+            const modalPag = bootstrap.Modal.getInstance(modalPagEl);
+            if (modalPag) modalPag.hide();
+
+            // 2. Pequeno atraso para evitar conflito de animação do Bootstrap
+            setTimeout(() => {
+                const mSucesso = new bootstrap.Modal(document.getElementById('modalSucesso'));
+                mSucesso.show();
+            }, 400); // 400ms é o tempo ideal para a animação de saída terminar
+        } else {
+            alert("Erro ao finalizar venda. Verifique os dados e tente novamente.");
+        }
+    }
+    function imprimirCupom() {
+        if (ultimaVendaId) {
+            // Abre o cupom em uma nova aba/janela pequena
+            window.open(`/vendas/cupom/${ultimaVendaId}`, '_blank', 'width=350,height=600');
         }
     }
 
-    // Atualiza dashboard ao abrir modal
+    function limparCupom() {
+        if (confirm("Deseja realmente cancelar esta venda?")) {
+            totalVenda = 0;
+            pagamentos = [];
+            document.getElementById('lista-itens-cupom').innerHTML = '<div id="aviso-vazio" class="text-center py-5 text-muted"><i class="bi bi-cart3 fs-1 d-block"></i> Aguardando itens...</div>';
+            document.getElementById('valor-total-cupom').innerText = "0.00";
+            document.getElementById('btn-finalizar').disabled = true;
+            campoBusca.value = "";
+            carregarItens();
+            campoBusca.focus();
+        }
+    }
+
+    // Foca na quantidade ao abrir o modal
+    document.getElementById('modalAjusteItem').addEventListener('shown.bs.modal', function () {
+        const inputQtd = document.getElementById('qtdModal');
+        inputQtd.focus();
+        inputQtd.select();
+    });
+
+    // Atualiza os valores e preenche o campo automaticamente ao abrir o modal
+    document.getElementById('modalPagamento').addEventListener('show.bs.modal', function () {
+        // 1. Atualiza os textos de total, pago e restante
+        atualizarDashboard();
+
+        // 2. Calcula quanto ainda falta pagar
+        const pago = pagamentos.reduce((acc, p) => acc + p.valor, 0);
+        const restante = totalVenda - pago;
+
+        // 3. Preenche o campo de valor com o que falta (se for maior que zero)
+        const inputValorParcial = document.getElementById('valor_parcial');
+        if (restante > 0) {
+            inputValorParcial.value = restante.toFixed(2);
+        } else {
+            inputValorParcial.value = "";
+        }
+
+        // 4. Dá foco automático no campo de valor e seleciona o texto
+        // O setTimeout de 500ms é necessário para o Bootstrap terminar a animação do modal
+        setTimeout(() => {
+            inputValorParcial.focus();
+            inputValorParcial.select();
+        }, 500);
+    });
+    document.getElementById('valor_parcial').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            adicionarPagamento();
+        }
+    });
+    // Atualiza dashboard ao abrir modal de pagamento
     document.getElementById('modalPagamento').addEventListener('show.bs.modal', atualizarDashboard);
 </script>
 {% endblock %}

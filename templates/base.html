@@ -1,107 +1,181 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-br" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Papelaria</title>
+    <title>Sistema Papelaria - Pro</title>
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
     <style>
-        :root { --sidebar-width: 250px; }
-        body { background-color: #f8f9fa; }
+        :root { 
+            --sidebar-width: 260px; 
+            --sidebar-bg: #1e1e2d;
+            --sidebar-active: #3699ff;
+            --top-nav-height: 60px;
+        }
+
+        /* Estilos Dark Mode Globais */
+        [data-bs-theme="dark"] .text-dark, [data-bs-theme="dark"] .text-black { color: var(--bs-body-color) !important; }
+        [data-bs-theme="dark"] .card-header.bg-white { background-color: var(--bs-card-cap-bg) !important; color: var(--bs-body-color) !important; }
+        [data-bs-theme="dark"] .table-light { --bs-table-bg: #373c42; --bs-table-color: #fff; }
+
+        body { background-color: var(--bs-body-bg); transition: background-color 0.3s ease; overflow-x: hidden; }
+
+        /* NAVBAR MOBILE */
+        .mobile-top-nav {
+            display: none;
+            height: var(--top-nav-height);
+            background: var(--sidebar-bg);
+            color: white;
+            align-items: center;
+            padding: 0 15px;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1050;
+        }
+
+        /* SIDEBAR ESTRUTURA FIXA */
         #sidebar { 
             width: var(--sidebar-width); 
             height: 100vh; 
             position: fixed; 
-            background: #212529; 
+            background: var(--sidebar-bg); 
             color: white;
-            transition: all 0.3s;
+            transition: all 0.3s ease-in-out;
+            z-index: 1100;
+            left: 0;
+            display: flex !important;
+            flex-direction: column !important;
+            flex-wrap: nowrap !important; /* Impede a criação de novas colunas */
+            overflow: hidden;
         }
+
+        /* HEADER E FOOTER DA SIDEBAR (Não encolhem) */
+        .sidebar-header, .sidebar-footer {
+            flex-shrink: 0;
+        }
+
+        /* CONTEÚDO ROLÁVEL (O menu) */
+        .nav-menu-scroll {
+            flex-grow: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* Scrollbar fina para o Menu */
+        .nav-menu-scroll::-webkit-scrollbar { width: 5px; }
+        .nav-menu-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+
         #content { 
             margin-left: var(--sidebar-width); 
-            padding: 20px; 
-            min-height: 100vh;
+            padding: 25px; 
+            min-height: 100vh; 
+            transition: all 0.3s; 
         }
-        .nav-link { color: rgba(255,255,255,0.7); transition: 0.2s; }
-        .nav-link:hover, .nav-link.active { color: white; background: rgba(255,255,255,0.1); }
-        .nav-section-title { 
-            font-size: 0.75rem; 
-            text-uppercase; 
-            letter-spacing: 1px; 
-            color: rgba(255,255,255,0.4); 
-            padding: 1.5rem 1rem 0.5rem;
+
+        #sidebar-overlay {
+            display: none;
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+            z-index: 1090;
         }
-        .bg-success-light { background-color: #d1e7dd; }
-        .bg-warning-light { background-color: #fff3cd; }
-        .table-danger-light { background-color: #f8d7da !important; }
+
+        .nav-link { 
+            color: rgba(255,255,255,0.6); 
+            font-size: 0.95rem;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            margin: 0.2rem 0.8rem;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            transition: 0.2s;
+        }
+
+        .nav-link:hover { color: white; background: rgba(255,255,255,0.05); }
+        .nav-link.active { color: white !important; background: var(--sidebar-active) !important; box-shadow: 0 4px 12px rgba(54, 153, 255, 0.3); }
+
+        .nav-section-title { font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: rgba(255,255,255,0.3); padding: 1.2rem 1.8rem 0.5rem; }
+
+        @media (max-width: 991.98px) {
+            .mobile-top-nav { display: flex; }
+            #sidebar { left: calc(-1 * var(--sidebar-width)); }
+            #sidebar.active { left: 0; }
+            #content { margin-left: 0; padding-top: calc(var(--top-nav-height) + 20px); }
+            #sidebar-overlay.active { display: block; }
+        }
+
+        .alert { border: none; border-radius: 10px; }
     </style>
 </head>
 <body>
 
-    <nav id="sidebar" class="d-flex flex-column">
-        <div class="p-3 text-center border-bottom border-secondary">
-            <h5 class="mb-0 fw-bold"><i class="bi bi-pencil-fill me-2"></i>PDV Papelaria</h5>
+    <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <header class="mobile-top-nav shadow-sm">
+        <button class="btn text-white fs-3 p-0 me-3" onclick="toggleSidebar()">
+            <i class="bi bi-list"></i>
+        </button>
+        <span class="fw-bold text-truncate">{{ current_user.papelaria.nome_fantasia }}</span>
+    </header>
+
+    <nav id="sidebar" class="shadow">
+        <div class="sidebar-header p-4 text-center border-bottom border-secondary d-none d-lg-block">
+            {% if current_user.papelaria.logo_path %}
+                <img src="{{ url_for('static', filename=current_user.papelaria.logo_path) }}" 
+                     alt="Logo" class="img-fluid mb-2" style="max-height: 45px; border-radius: 5px;">
+            {% else %}
+                <i class="bi bi-pencil-square text-info mb-2 fs-3"></i>
+            {% endif %}
+            <h6 class="mb-0 fw-bold text-white text-uppercase small">{{ current_user.papelaria.nome_fantasia }}</h6>
         </div>
 
-        <ul class="nav nav-pills flex-column mb-auto p-2">
-            <li class="nav-section-title">Operacional</li>
-            <li class="nav-item">
-                <a href="{{ url_for('main.dashboard') }}" class="nav-link">
-                    <i class="bi bi-speedometer2 me-2"></i> Dashboard
-                </a>
-            </li>
-            <li>
-                <a href="{{ url_for('vendas.caixa') }}" class="nav-link">
-                    <i class="bi bi-cart4 me-2"></i> Frente de Caixa
-                </a>
-            </li>
-            <li>
-                <a href="{{ url_for('clientes.lista') }}" class="nav-link">
-                    <i class="bi bi-people me-2"></i> Clientes
-                </a>
-            </li>
-            <li>
-                <a href="{{ url_for('vendas.relatorio') }}" class="nav-link">
-                    <i class="bi bi-file-earmark-bar-graph me-2"></i> Relatório de Vendas
-                </a>
-            </li>
-            <li>
-                <a href="{{ url_for('estoque.lista_produtos') }}" class="nav-link">
-                    <i class="bi bi-box-seam me-2"></i> Estoque / Produtos
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ 'active' if request.endpoint == 'servicos.lista' }}" href="{{ url_for('servicos.lista') }}">
-                    <i class="bi bi-tools me-2"></i> Serviços
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ 'active' if request.endpoint == 'despesas.lista' }}" href="{{ url_for('despesas.lista') }}">
-                    <i class="bi bi-cash-stack me-2"></i> Despesas (Contas a Pagar)
-                </a>
-            </li>
+        <div class="nav-menu-scroll py-3">
+            <ul class="nav nav-pills flex-column">
+                <li class="nav-section-title">Principal</li>
+                <li><a href="{{ url_for('main.dashboard') }}" class="nav-link {{ 'active' if request.endpoint == 'main.dashboard' }}"><i class="bi bi-grid-1x2-fill me-2"></i> Dashboard</a></li>
+                <li><a href="{{ url_for('vendas.caixa') }}" class="nav-link {{ 'active' if request.endpoint == 'vendas.caixa' }}"><i class="bi bi-cpu-fill me-2"></i> Caixa</a></li>
 
-            <li class="nav-section-title">Configurações</li>
-            <li>
-                <a href="{{ url_for('configuracoes.lista_categorias') }}" class="nav-link">
-                    <i class="bi bi-tags me-2"></i> Categorias
-                </a>
-            </li>
-            <li>
-                <a href="{{ url_for('configuracoes.lista_pagamentos') }}" class="nav-link">
-                    <i class="bi bi-credit-card me-2"></i> Meios de Pagamento
-                </a>
-            </li>
-        </ul>
+                <li class="nav-section-title">Gestão</li>
+                <li><a href="{{ url_for('vendas.relatorio') }}" class="nav-link {{ 'active' if request.endpoint == 'vendas.relatorio' }}"><i class="bi bi-bar-chart-line-fill me-2"></i> Vendas</a></li>
+                <li><a href="{{ url_for('estoque.lista_produtos') }}" class="nav-link {{ 'active' if request.endpoint == 'estoque.lista_produtos' }}"><i class="bi bi-archive-fill me-2"></i> Produtos</a></li>
+                <li><a href="{{ url_for('servicos.lista') }}" class="nav-link {{ 'active' if request.endpoint == 'servicos.lista' }}"><i class="bi bi-layers-half me-2"></i> Serviços</a></li>
+                <li><a href="{{ url_for('despesas.lista') }}" class="nav-link {{ 'active' if request.endpoint == 'despesas.lista' }}"><i class="bi bi-wallet2 me-2"></i> Despesas</a></li>
+                <li><a href="{{ url_for('clientes.lista') }}" class="nav-link {{ 'active' if request.endpoint == 'clientes.lista' }}"><i class="bi bi-person-badge-fill me-2"></i> Clientes</a></li>
 
-        <div class="p-3 border-top border-secondary">
+                <li class="nav-section-title">Ajustes</li>
+                <li><a href="{{ url_for('configuracoes.geral') }}" class="nav-link {{ 'active' if request.endpoint == 'configuracoes.geral' }}"><i class="bi bi-gear-fill me-2"></i> Empresa</a></li>
+                <li><a href="{{ url_for('configuracoes.lista_categorias') }}" class="nav-link {{ 'active' if 'categorias' in request.endpoint }}"><i class="bi bi-tags-fill me-2"></i> Categorias</a></li>
+                <li><a href="{{ url_for('configuracoes.lista_pagamentos') }}" class="nav-link {{ 'active' if 'pagamentos' in request.endpoint }}"><i class="bi bi-credit-card-2-back-fill me-2"></i> Pagamentos</a></li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer p-3 border-top border-secondary bg-dark-subtle">
+            <div class="d-flex align-items-center justify-content-between mb-3 px-2">
+                <small class="fw-bold opacity-50 text-white">TEMA</small>
+                <div class="form-check form-switch p-0 m-0">
+                    <input class="form-check-input" type="checkbox" id="themeToggle" style="cursor: pointer;">
+                </div>
+            </div>
+            
             <div class="dropdown">
-                <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
-                    <i class="bi bi-person-circle me-2"></i>
-                    <strong>{{ current_user.nome }}</strong>
+                <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle px-1" data-bs-toggle="dropdown">
+                    <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2 flex-shrink-0" style="width: 32px; height: 32px;">
+                        <span class="small fw-bold">{{ current_user.username[0]|upper }}</span>
+                    </div>
+                    <div class="d-flex flex-column overflow-hidden">
+                        <span class="small fw-bold text-truncate" style="max-width: 130px;">{{ current_user.username }}</span>
+                    </div>
                 </a>
-                <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
-                    <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Sair</a></li>
+                <ul class="dropdown-menu dropdown-menu-dark shadow border-secondary">
+                    <li><a class="dropdown-item" href="{{ url_for('configuracoes.geral') }}">Perfil</a></li>
+                    <li><hr class="dropdown-divider border-secondary"></li>
+                    <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">Sair</a></li>
                 </ul>
             </div>
         </div>
@@ -125,6 +199,26 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+            document.getElementById('sidebar-overlay').classList.toggle('active');
+        }
+
+        const html = document.documentElement;
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        
+        html.setAttribute('data-bs-theme', savedTheme);
+        themeToggle.checked = savedTheme === 'dark';
+
+        themeToggle.addEventListener('change', () => {
+            const newTheme = themeToggle.checked ? 'dark' : 'light';
+            html.setAttribute('data-bs-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        });
+    </script>
 
     {% block scripts %}{% endblock %}
 </body>

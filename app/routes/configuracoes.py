@@ -1,11 +1,71 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from extensions import db
 from models import Categoria, FormaPagamento
+import os
+from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash
 
 configuracoes = Blueprint('configuracoes', __name__)
 
+@configuracoes.route('/geral', methods=['GET', 'POST'])
+@login_required
+def geral():
+    papelaria = current_user.papelaria
+    
+    if request.method == 'POST':
+        # 1. Atualizar Dados da Empresa
+        papelaria.nome_fantasia = request.form.get('nome_fantasia')
+        papelaria.cnpj_cpf = request.form.get('cnpj_cpf')
+        papelaria.email = request.form.get('email')
+        papelaria.telefones = request.form.get('telefones')
+        papelaria.chave_pix = request.form.get('chave_pix')
+        papelaria.site = request.form.get('site')
+        
+        # Endereço
+        papelaria.cep = request.form.get('cep')
+        papelaria.logradouro = request.form.get('logradouro')
+        papelaria.numero = request.form.get('numero')
+        papelaria.bairro = request.form.get('bairro')
+        papelaria.cidade = request.form.get('cidade')
+        papelaria.estado = request.form.get('estado')
+        papelaria.complemento = request.form.get('complemento')
+
+        # 2. Tratamento da Logo (Upload)
+        file = request.files.get('logo')
+        if file and file.filename != '':
+            # Gera o nome do arquivo
+            extension = os.path.splitext(file.filename)[1]
+            filename = f"logo_{papelaria.id}{extension}"
+            
+            # Caminho ABSOLUTO para salvar o arquivo (Onde o Python grava)
+            # Isso evita o erro de "folder not found"
+            upload_path = os.path.join(current_app.root_path, 'static', 'uploads', 'logos')
+            os.makedirs(upload_path, exist_ok=True) # Cria a pasta se não existir
+            
+            full_path = os.path.join(upload_path, filename)
+            file.save(full_path)
+            
+            # Caminho RELATIVO para o banco de dados (O que o HTML vai ler)
+            # IMPORTANTE: Não deve começar com 'static/'
+            papelaria.logo_path = f"uploads/logos/{filename}"
+            
+            # Força o commit imediatamente para garantir a gravação
+            db.session.add(papelaria)
+            db.session.commit()
+        # 3. Alteração de Senha (se preenchida)
+        nova_senha = request.form.get('nova_senha')
+        if nova_senha:
+            current_user.password_hash = generate_password_hash(nova_senha)
+
+        db.session.commit()
+        flash('Configurações atualizadas com sucesso!', 'success')
+        return redirect(url_for('configuracoes.geral'))
+
+    return render_template('configuracoes/geral.html', papelaria=papelaria)
+
 # --- CATEGORIAS ---
+
 @configuracoes.route('/categorias')
 @login_required
 def lista_categorias():

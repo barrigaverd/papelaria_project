@@ -15,19 +15,36 @@ def load_user(user_id):
 # 2. MODELO: PAPELARIA (O TENANT/CLIENTE DO SAAS)
 # Crie uma classe que represente a loja/papelaria.
 class Papelaria(db.Model):
-# Ela deve herdar de db.Model.
-# Atributos:
-# - id: Inteiro, chave primária.
     id = db.Column(db.Integer, primary_key=True)
-# - nome_fantasia: Texto (String), obrigatório.
     nome_fantasia = db.Column(db.String(100), nullable=False)
-# - Relacionamentos: Crie relações (db.relationship) para Usuários, Produtos e Movimentações.
-    usuarios = db.relationship('Usuario', backref='papelaria', lazy=True)
-    produtos = db.relationship('Produto', backref='papelaria', lazy=True)
-    movimentacoes = db.relationship('Movimentacao', backref='papelaria', lazy=True)
     
-#   Dica: Use 'backref' para facilitar o acesso (ex: produto.papelaria.nome).
+    # --- NOVOS CAMPOS ---
+    cnpj_cpf = db.Column(db.String(20))
+    email = db.Column(db.String(100))
+    site = db.Column(db.String(100))
+    telefones = db.Column(db.String(100)) # Pode salvar como "9999-9999, 8888-8888"
+    chave_pix = db.Column(db.String(100))
+    logo_path = db.Column(db.String(200)) # Caminho para a imagem da logo
+    
+    # Endereço
+    cep = db.Column(db.String(10))
+    logradouro = db.Column(db.String(150))
+    numero = db.Column(db.String(10))
+    bairro = db.Column(db.String(100))
+    cidade = db.Column(db.String(100))
+    estado = db.Column(db.String(2))
+    complemento = db.Column(db.String(100))
 
+    # Relacionamentos que você já tem...
+    usuarios = db.relationship('Usuario', backref='papelaria', cascade='all, delete-orphan')
+    produtos = db.relationship('Produto', backref='papelaria', cascade='all, delete-orphan')
+    clientes = db.relationship('Cliente', backref='papelaria', cascade='all, delete-orphan')
+    movimentacoes = db.relationship('Movimentacao', backref='papelaria', cascade='all, delete-orphan')
+    despesas = db.relationship('Despesa', backref='papelaria', cascade='all, delete-orphan')
+    categorias = db.relationship('Categoria', backref='papelaria', cascade='all, delete-orphan')
+    formas_pagamento = db.relationship('FormaPagamento', backref='papelaria', cascade='all, delete-orphan')
+    servicos = db.relationship('Servico', backref='papelaria', cascade='all, delete-orphan')
+    # ...
 # -------------------------------------------------------------------------
 
 # 3. MODELO: USUARIO

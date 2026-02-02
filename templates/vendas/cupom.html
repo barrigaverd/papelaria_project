@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'Courier New', Courier, monospace; width: 300px; font-size: 14px; margin: 0; padding: 10px; }
+        .text-center { text-center: center; text-align: center; }
+        .dashed-line { border-top: 1px dashed #000; margin: 10px 0; }
+        table { width: 100%; border-collapse: collapse; }
+        .item-row td { padding: 5px 0; }
+        .total-row { font-weight: bold; font-size: 16px; }
+        @media print { .no-print { display: none; } }
+    </style>
+</head>
+<body onload="window.print()">
+    <div class="text-center">
+        <h3 style="margin-bottom: 5px;">{{ current_user.papelaria.nome_fantasia }}</h3>
+        <p style="margin: 0;">CNPJ: 00.000.000/0001-00</p>
+        <p style="margin: 0;">Data: {{ data.strftime('%d/%m/%Y %H:%M') }}</p>
+    </div>
+
+    <div class="dashed-line"></div>
+
+    <table>
+        <thead>
+            <tr style="text-align: left; font-size: 12px;">
+                <th>ITEM</th>
+                <th>QTD</th>
+                <th style="text-align: right;">VALOR</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in itens %}
+            <tr class="item-row">
+                <td>{{ (item.descricao or 'Item s/ Nome')[:15] }}</td>
+                <td>{{ item.quantidade }}</td>
+                <td style="text-align: right;">R$ {{ "%.2f"|format(item.valor) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="dashed-line"></div>
+
+    <div class="total-row">
+        <div style="display: flex; justify-content: space-between;">
+            <span>TOTAL:</span>
+            <span>R$ {{ "%.2f"|format(total) }}</span>
+        </div>
+    </div>
+
+    <div class="dashed-line"></div>
+
+    <div class="text-center">
+        <p>Cliente: {{ cliente.nome if cliente else 'Consumidor Final' }}</p>
+        <p>Obrigado pela preferência!</p>
+    </div>
+
+    <button class="no-print" onclick="window.close()" style="margin-top: 20px; width: 100%; padding: 10px;">FECHAR JANELA</button>
+</body>
+</html>

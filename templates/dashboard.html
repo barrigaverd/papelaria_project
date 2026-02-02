@@ -2,50 +2,233 @@
 
 {% block content %}
 <div class="container-fluid py-4">
-    <h2 class="mb-4 fw-bold">Bem-vindo, {{ current_user.nome }}!</h2>
+    <div class="row align-items-center mb-4 g-3">
+        <div class="col-12 col-md-6">
+            <h2 class="fw-bold mb-0">Olá, {{ current_user.username }}! 👋</h2>
+            <p class="text-muted mb-0">
+                <i class="bi bi-shop me-1"></i> {{ current_user.papelaria.nome_fantasia }}
+            </p>
+        </div>
+        <div class="col-12 col-md-6 text-md-end">
+            <div class="d-inline-block bg-body-tertiary border rounded-pill px-3 py-2 shadow-sm">
+                <i class="bi bi-calendar3 me-2 text-primary"></i>
+                <span class="fw-bold">{{ hoje.strftime('%d/%m/%Y') }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100 card-kpi bg-primary text-white">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="text-uppercase small fw-bold mb-0 opacity-75">Vendas Hoje</h6>
+                        <i class="bi bi-graph-up-arrow fs-4"></i>
+                    </div>
+                    <h2 class="fw-bold mb-0">R$ {{ "%.2f"|format(faturamento_dia) }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100 card-kpi bg-danger text-white">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="text-uppercase small fw-bold mb-0 opacity-75">Contas Hoje</h6>
+                        <i class="bi bi-cash-stack fs-4"></i>
+                    </div>
+                    <h2 class="fw-bold mb-0">R$ {{ "%.2f"|format(total_despesas_dia) }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            {% set saldo = faturamento_dia - total_despesas_dia %}
+            <div class="card border-0 shadow-sm h-100 card-kpi {% if saldo >= 0 %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                <div class="card-body p-4 text-white">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="text-uppercase small fw-bold mb-0 opacity-75">Saldo Diário</h6>
+                        <i class="bi bi-piggy-bank fs-4"></i>
+                    </div>
+                    <h2 class="fw-bold mb-0">R$ {{ "%.2f"|format(saldo) }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100 card-kpi bg-dark text-white border-start border-4 border-info">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="text-uppercase small fw-bold mb-0 opacity-75">Capital Estoque</h6>
+                        <i class="bi bi-box-seam fs-4"></i>
+                    </div>
+                    <h2 class="fw-bold mb-0">R$ {{ "%.2f"|format(capital_investido) }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="fw-bold mb-0">Desempenho Semanal</h5>
+                        <small class="text-muted small">Comparativo Vendas vs Despesas</small>
+                    </div>
+                    <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" title="Dados dos últimos 7 dias"></i>
+                </div>
+                <div class="card-body p-4">
+                    <div style="height: 300px;">
+                        <canvas id="graficoSemana"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4">Acesso Rápido</h5>
+                    <div class="d-grid gap-3">
+                        <a href="{{ url_for('vendas.caixa') }}" class="btn btn-primary py-3 fw-bold shadow-sm btn-hover-grow">
+                            <i class="bi bi-cart-plus me-2"></i> PDV / CAIXA
+                        </a>
+                        <a href="{{ url_for('despesas.lista') }}" class="btn btn-outline-danger py-3 fw-bold">
+                            <i class="bi bi-receipt me-2"></i> LANÇAR CONTA
+                        </a>
+                        <a href="{{ url_for('estoque.lista_produtos') }}" class="btn btn-outline-white py-3 fw-bold">
+                            <i class="bi bi-box-seam me-2"></i> VER ESTOQUE
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card border-0 shadow-sm bg-gradient bg-primary text-white p-4">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h1 class="fw-bold mb-0">{{ total_produtos }}</h1>
+                        <p class="small text-uppercase fw-bold mb-0 opacity-75">Produtos Ativos</p>
+                    </div>
+                    <i class="bi bi-archive-fill display-4 opacity-25"></i>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="row g-4">
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm bg-success text-white h-100">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="text-uppercase mb-2" style="opacity: 0.8;">Vendas Hoje</h6>
-                            <h2 class="display-6 fw-bold">R$ {{ "%.2f"|format(faturamento_dia) }}</h2>
-                        </div>
-                        <div class="fs-1 opacity-50"><i class="bi bi-graph-up-arrow"></i></div>
-                    </div>
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <h5 class="fw-bold mb-0 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Reposição Urgente</h5>
                 </div>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm bg-primary text-white h-100">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="text-uppercase mb-2" style="opacity: 0.8;">Capital no Estoque</h6>
-                            <h2 class="display-6 fw-bold">R$ {{ "%.2f"|format(capital_investido) }}</h2>
-                        </div>
-                        <div class="fs-1 opacity-50"><i class="bi bi-piggy-bank"></i></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm bg-dark text-white h-100">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="text-uppercase mb-2" style="opacity: 0.8;">Produtos Ativos</h6>
-                            <h2 class="display-6 fw-bold">{{ total_produtos }}</h2>
-                        </div>
-                        <div class="fs-1 opacity-50"><i class="bi bi-box-seam"></i></div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 mt-2">
+                            <thead class="table-light">
+                                <tr class="small text-uppercase">
+                                    <th class="ps-4">Produto</th>
+                                    <th>Qtd Atual</th>
+                                    <th class="text-end pe-4">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in estoque_baixo %}
+                                <tr>
+                                    <td class="ps-4 fw-bold">{{ p.nome }}</td>
+                                    <td>
+                                        <span class="badge rounded-pill bg-danger-subtle text-danger px-3">
+                                            {{ p.estoque_atual }} em estoque
+                                        </span>
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <a href="{{ url_for('estoque.lista_produtos') }}" class="btn btn-sm btn-link text-decoration-none fw-bold">Repor</a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-5 text-muted">
+                                        <i class="bi bi-check2-circle fs-1 d-block mb-2 text-success"></i>
+                                        Estoque saudável. Nenhuma reposição crítica.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .card-kpi { transition: all 0.3s cubic-bezier(.25,.8,.25,1); }
+    .card-kpi:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.12) !important; }
+    .btn-hover-grow:hover { transform: translateY(-2px); filter: brightness(1.1); transition: 0.2s; }
+    
+    [data-bs-theme="dark"] .table-light { --bs-table-bg: #373c42; --bs-table-color: #fff; }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('graficoSemana');
+    
+    // Detecta tema
+    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+    const textColor = isDark ? '#adb5bd' : '#6c757d';
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ labels_grafico|tojson }},
+            datasets: [
+                {
+                    label: 'Vendas (R$)',
+                    data: {{ dados_vendas|tojson }},
+                    borderColor: '#3699ff',
+                    backgroundColor: 'rgba(54, 153, 255, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#3699ff'
+                },
+                {
+                    label: 'Despesas (R$)',
+                    data: {{ dados_despesas|tojson }},
+                    borderColor: '#f64e60',
+                    borderDash: [5, 5],
+                    fill: false,
+                    tension: 0.4,
+                    pointRadius: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { 
+                legend: { 
+                    position: 'top',
+                    align: 'end',
+                    labels: { color: textColor, boxWidth: 12, usePointStyle: true } 
+                } 
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    grid: { color: gridColor }, 
+                    ticks: { 
+                        color: textColor,
+                        callback: function(value) { return 'R$ ' + value; }
+                    } 
+                },
+                x: { grid: { display: false }, ticks: { color: textColor } }
+            }
+        }
+    });
+</script>
 {% endblock %}

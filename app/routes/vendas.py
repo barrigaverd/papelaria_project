@@ -27,88 +27,70 @@ def caixa():
 @vendas.route('/buscar_itens')
 @login_required
 def buscar_itens():
-    q = request.args.get('q', '').strip()
-    if not q:
-        return jsonify([])
-
-    # Busca em Produtos
-    produtos = Produto.query.filter(
-        Produto.papelaria_id == current_user.papelaria_id,
-        Produto.nome.ilike(f'%{q}%')
-    ).all()
-
-    # Busca em Serviços
-    servicos = Servico.query.filter(
-        Servico.papelaria_id == current_user.papelaria_id,
-        Servico.descricao.ilike(f'%{q}%')
-    ).all()
-
-    resultados = []
+    query = request.args.get('q', '').strip()
     
+    # Se a busca estiver vazia, pegamos os primeiros 50 itens em ordem alfabética
+    if not query:
+        produtos = Produto.query.filter_by(papelaria_id=current_user.papelaria_id).order_by(Produto.nome.asc()).limit(50).all()
+        servicos = Servico.query.filter_by(papelaria_id=current_user.papelaria_id).order_by(Servico.descricao.asc()).limit(50).all()
+    else:
+        # Lógica de busca que você já tem...
+        produtos = Produto.query.filter(Produto.nome.ilike(f'%{query}%')).all()
+        servicos = Servico.query.filter(Servico.descricao.ilike(f'%{query}%')).all()
+
+    # Formata a lista para o JSON
+    res = []
     for p in produtos:
-        resultados.append({
-            'id': p.id,
-            'nome': p.nome,
-            'preco': p.preco_venda,
-            'tipo': 'produto',
-            'estoque': p.estoque_atual
-        })
-
+        res.append({'id': p.id, 'nome': p.nome, 'preco': p.preco_venda, 'estoque': p.estoque_atual, 'tipo': 'produto'})
     for s in servicos:
-        resultados.append({
-            'id': s.id,
-            'nome': s.descricao,
-            'preco': s.preco,
-            'tipo': 'servico',
-            'estoque': '∞' 
-        })
-
-    return jsonify(resultados)
+        res.append({'id': s.id, 'nome': s.descricao, 'preco': s.preco, 'estoque': 'N/A', 'tipo': 'serviço'})
+    
+    return jsonify(res)
 
 @vendas.route('/finalizar', methods=['POST'])
 @login_required
 def finalizar():
     dados = request.get_json()
-    itens = dados.get('itens', [])
-    lista_pagos = dados.get('pagamentos', [])
-    cliente_id = dados.get('cliente_id') or None
-    data_str = dados.get('data_venda')
-
-    # Gera Ticket Único
-    ticket_id = str(uuid.uuid4())[:8].upper() 
-    formas_resumo = ", ".join([f"{p['forma']} (R$ {p['valor']:.2f})" for p in lista_pagos])
-
-    if data_str:
-        data_final = datetime.combine(datetime.strptime(data_str, '%Y-%m-%d'), datetime.now().time())
-    else:
-        data_final = datetime.now()
+    itens = dados.get('itens')
+    cliente_id = dados.get('cliente_id')
+    venda_id = str(uuid.uuid4()) # Gera o ID único da venda
+    
+    # Pegamos a data enviada ou usamos a atual
+    data_venda_str = dados.get('data_venda')
+    data_final = datetime.strptime(data_venda_str, '%Y-%m-%d') if data_venda_str else datetime.now()
 
     for item in itens:
-        nova_venda = Movimentacao(
-            venda_id=ticket_id,
+        # --- AQUI ESTÁ A CORREÇÃO ---
+        # Precisamos descobrir o nome do item para salvar no cupom
+        nome_para_descricao = ""
+        
+        if item['tipo'] == 'produto':
+            prod = Produto.query.get(item['id'])
+            nome_para_descricao = prod.nome # Pega o nome da tabela Produto
+            # Aproveite para baixar o estoque aqui
+            prod.estoque_atual -= int(item['quantidade'])
+        else:
+            serv = Servico.query.get(item['id'])
+            nome_para_descricao = serv.descricao # Pega a descrição da tabela Servico
+
+        # Criamos a movimentação com a descrição preenchida
+        nova_mov = Movimentacao(
             papelaria_id=current_user.papelaria_id,
-            cliente_id=cliente_id,
             tipo='SAIDA',
-            categoria='Venda PDV',
+            categoria='Venda' if item['tipo'] == 'produto' else 'Serviço',
+            descricao=nome_para_descricao, # <--- AGORA O NOME VAI PARA O CUPOM
             valor=float(item['preco']) * int(item['quantidade']),
             quantidade=int(item['quantidade']),
-            forma_pagamento=formas_resumo,
+            produto_id=item['id'] if item['tipo'] == 'produto' else None,
+            servico_id=item['id'] if item['tipo'] == 'servico' else None,
+            venda_id=venda_id,
+            cliente_id=cliente_id if cliente_id else None,
             data=data_final
         )
+        db.session.add(nova_mov)
 
-        # Lógica Diferenciada: Produto vs Serviço
-        if item.get('tipo') == 'produto':
-            nova_venda.produto_id = item['id']
-            p = Produto.query.get(item['id'])
-            if p:
-                p.estoque_atual -= int(item['quantidade'])
-        else:
-            nova_venda.servico_id = item['id']
-
-        db.session.add(nova_venda)
-    
     db.session.commit()
-    return jsonify({'status': 'success', 'venda_id': ticket_id})
+    return jsonify({"status": "sucesso", "venda_id": venda_id})
 
 @vendas.route('/relatorio')
 @login_required
@@ -241,3 +223,21 @@ def estornar_ticket(venda_id):
         flash("Erro ao estornar.", "danger")
 
     return redirect(url_for('vendas.relatorio'))
+
+@vendas.route('/cupom/<venda_id>')
+@login_required
+def gerar_cupom(venda_id):
+    # Busca todas as movimentações com esse ID de venda
+    itens = Movimentacao.query.filter_by(venda_id=venda_id).all()
+    if not itens:
+        return "Venda não encontrada", 404
+        
+    total = sum(item.valor for item in itens)
+    # Pega o cliente do primeiro item (todos são iguais na mesma venda)
+    cliente = itens[0].cliente
+    
+    return render_template('vendas/cupom.html', 
+                           itens=itens, 
+                           total=total, 
+                           cliente=cliente, 
+                           data=itens[0].data)
