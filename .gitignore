@@ -1,56 +1,19 @@
-# --- Python ---
+# Cache do Python
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
+*.pyc
 
-# --- Ambientes Virtuais ---
+# Ambiente Virtual
 venv/
 .venv/
-env/
-ENV/
-env.bak/
-venv.bak/
 
-# --- Variáveis de Ambiente e Segredos ---
-.env
-.flaskenv
+# Banco de Dados LOCAL (Ajustado para o seu nome de arquivo)
 instance/
-.secret
-.key
+papelaria.db
 
-# --- Banco de Dados ---
-# Ignoramos o arquivo do banco de dados local para não subir dados de teste
-*.db
-*.sqlite
-*.sqlite3
+# Uploads (Mantém a estrutura da pasta, mas ignora as fotos salvas)
+app/static/uploads/logos/*
+!app/static/uploads/logos/.gitkeep
 
-# --- IDEs e Editores ---
+# Arquivos do VS Code ou IDE
 .vscode/
-.idea/
-*.swp
-*.swo
-
-# --- Sistema Operacional ---
-Thumbs.db
-desktop.ini
-.DS_Store
-
-# --- Logs ---
-*.log
+.env
