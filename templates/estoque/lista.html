@@ -42,7 +42,7 @@
                     {% for produto in produtos %}
                     <tr>
                         <td class="ps-4">
-                            <span class="fw-bold text-dark">{{ produto.nome }}</span>
+                            <span class="fw-bold">{{ produto.nome }}</span>
                         </td>
                         <td>
                             {% if produto.categoria %}
@@ -102,7 +102,7 @@
                     <a class="page-link shadow-sm" href="{{ url_for('estoque.lista_produtos', page=pagination.prev_num, search=search) }}">Anterior</a>
                 </li>
                 <li class="page-item disabled">
-                    <span class="page-link text-dark fw-bold">Página {{ pagination.page }} de {{ pagination.pages }}</span>
+                    <span class="page-link fw-bold">Página {{ pagination.page }} de {{ pagination.pages }}</span>
                 </li>
                 <li class="page-item {{ 'disabled' if not pagination.has_next }}">
                     <a class="page-link shadow-sm" href="{{ url_for('estoque.lista_produtos', page=pagination.next_num, search=search) }}">Próximo</a>

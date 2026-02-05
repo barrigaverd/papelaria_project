@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold m-0">Painel Financeiro</h2>
+        <div class="text-muted">
+            <i class="bi bi-calendar3 me-2"></i>{{ meses_nome[mes_sel-1][1] }} / {{ ano_sel }}
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('financeiro.dashboard') }}" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-uppercase opacity-75">Selecionar Mês</label>
+                    <select name="mes" class="form-select border-0 bg-light shadow-none">
+                        {% for num, nome in meses_nome %}
+                            <option value="{{ num }}" {{ 'selected' if num == mes_sel }}>{{ nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-uppercase opacity-75">Ano</label>
+                    <select name="ano" class="form-select border-0 bg-light shadow-none">
+                        {% for a in anos_disponiveis %}
+                            <option value="{{ a }}" {{ 'selected' if a == ano_sel }}>{{ a }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold py-2">
+                        <i class="bi bi-funnel-fill me-2"></i>Filtrar
+                    </button>
+                </div>
+                <div class="col-md-3 text-end d-none d-md-block">
+                    <span class="badge bg-info-subtle text-info px-3 py-2 rounded-pill">Dados em Tempo Real</span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm border-start border-primary border-5 h-100">
+                <div class="card-body py-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 bg-primary bg-opacity-10 p-3 rounded-3">
+                            <i class="bi bi-arrow-up-circle-fill text-primary fs-3"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="small fw-bold text-uppercase opacity-50 mb-1">Entradas (Mês)</div>
+                            <h3 class="fw-bold m-0 text-success">R$ {{ "%.2f"|format(entradas_mes) }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm border-start border-danger border-5 h-100">
+                <div class="card-body py-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 bg-danger bg-opacity-10 p-3 rounded-3">
+                            <i class="bi bi-arrow-down-circle-fill text-danger fs-3"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="small fw-bold text-uppercase opacity-50 mb-1">Saídas (Mês)</div>
+                            <h3 class="fw-bold m-0 text-danger">R$ {{ "%.2f"|format(saidas_mes) }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm border-start border-success border-5 h-100">
+                <div class="card-body py-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 bg-success bg-opacity-10 p-3 rounded-3">
+                            <i class="bi bi-currency-dollar text-success fs-3"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="small fw-bold text-uppercase opacity-50 mb-1">Saldo Líquido</div>
+                            <h3 class="fw-bold m-0 {{ 'text-success' if saldo_total >= 0 else 'text-danger' }}">
+                                R$ {{ "%.2f"|format(saldo_total) }}
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-0 py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold m-0"><i class="bi bi-graph-up me-2 text-primary"></i>Faturamento Diário</h6>
+                    <div class="btn-group btn-group-sm rounded-3 shadow-sm" role="group">
+                        <input type="radio" class="btn-check" name="chartType" id="typeLine" checked onclick="changeChart('line')">
+                        <label class="btn btn-outline-primary px-3" for="typeLine"><i class="bi bi-graph-up"></i></label>
+
+                        <input type="radio" class="btn-check" name="chartType" id="typeBar" onclick="changeChart('bar')">
+                        <label class="btn btn-outline-primary px-3" for="typeBar"><i class="bi bi-bar-chart-fill"></i></label>
+
+                        <input type="radio" class="btn-check" name="chartType" id="typeArea" onclick="changeChart('area')">
+                        <label class="btn btn-outline-primary px-3" for="typeArea"><i class="bi bi-area-chart-fill"></i></label>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div style="height: 350px;">
+                        <canvas id="graficoEvolucao"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-0 py-3">
+                    <h6 class="fw-bold m-0"><i class="bi bi-pie-chart-fill me-2 text-primary"></i>Gastos por Categoria</h6>
+                </div>
+                <div class="card-body d-flex flex-column justify-content-center">
+                    <div style="height: 300px;">
+                        <canvas id="graficoCategorias"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-5">
+        <div class="card-header bg-transparent border-0 py-3 d-flex justify-content-between align-items-center">
+            <h6 class="fw-bold m-0">Extrato Detalhado do Período</h6>
+            <button class="btn btn-light btn-sm fw-bold px-3 border" onclick="window.print()">
+                <i class="bi bi-printer me-2"></i>Imprimir
+            </button>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle m-0">
+                <thead class="bg-light">
+                    <tr class="small text-uppercase opacity-75">
+                        <th class="ps-4">Data</th>
+                        <th>Categoria</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Valor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in extrato %}
+                    <tr>
+                        <td class="ps-4 fw-medium">{{ item.data.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ item.categoria }}</td>
+                        <td>
+                            <span class="badge rounded-pill {{ 'bg-success-subtle text-success' if item.tipo == 'receita' else 'bg-danger-subtle text-danger' }} px-3">
+                                {{ 'Entrada' if item.tipo == 'receita' else 'Saída' }}
+                            </span>
+                        </td>
+                        <td class="text-end pe-4 fw-bold {{ 'text-success' if item.tipo == 'receita' else 'text-danger' }}">
+                            R$ {{ "%.2f"|format(item.valor) }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            Nenhuma movimentação encontrada neste período.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let chartInstance;
+    const ctxEvolucao = document.getElementById('graficoEvolucao').getContext('2d');
+    
+    // Dados injetados pelo Flask
+    const labelsEvolucao = {{ labels_grafico|tojson }};
+    const valoresEvolucao = {{ valores_grafico|tojson }};
+
+    function renderChart(type) {
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+
+        const isArea = type === 'area';
+        const chartType = isArea ? 'line' : type;
+
+        chartInstance = new Chart(ctxEvolucao, {
+            type: chartType,
+            data: {
+                labels: labelsEvolucao,
+                datasets: [{
+                    label: 'Vendas Diárias',
+                    data: valoresEvolucao,
+                    borderColor: '#3699ff',
+                    backgroundColor: isArea ? 'rgba(54, 153, 255, 0.1)' : '#3699ff',
+                    fill: isArea,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#fff',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { 
+                        beginAtZero: true,
+                        ticks: { callback: (value) => 'R$ ' + value }
+                    }
+                }
+            }
+        });
+    }
+
+    // Inicialização
+    function changeChart(newType) {
+        renderChart(newType);
+    }
+    
+    renderChart('line');
+
+    // Gráfico de Pizza (Categorias)
+    const ctxCategorias = document.getElementById('graficoCategorias').getContext('2d');
+    new Chart(ctxCategorias, {
+        type: 'doughnut',
+        data: {
+            labels: {{ labels_cat|tojson }},
+            datasets: [{
+                data: {{ valores_cat|tojson }},
+                backgroundColor: ['#3699ff', '#1cc88a', '#fd7e14', '#f64e60', '#8950fc'],
+                borderWidth: 0,
+                hoverOffset: 15
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '75%',
+            plugins: {
+                legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true } }
+            }
+        }
+    });
+</script>
+{% endblock %}

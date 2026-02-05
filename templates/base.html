@@ -1,196 +1,302 @@
 <!DOCTYPE html>
 <html lang="pt-br" data-bs-theme="light">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema Papelaria - Pro</title>
-    
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    
+
     <style>
-        :root { 
-            --sidebar-width: 260px; 
-            --sidebar-bg: #1e1e2d;
-            --sidebar-active: #3699ff;
-            --top-nav-height: 60px;
+        :root {
+            --sidebar-width: 280px;
+            --top-nav-height: 64px;
+            --accent-color: #3699ff;
+            /* Variáveis que mudam com o tema */
+            --body-bg: #f4f7f6;
+            --sidebar-bg: #ffffff;
+            --sidebar-text: #1e1e2d;
+            --sidebar-border: rgba(0, 0, 0, 0.05);
+            --nav-link-color: rgba(30, 30, 45, 0.8) !important;
         }
 
-        /* Estilos Dark Mode Globais */
-        [data-bs-theme="dark"] .text-dark, [data-bs-theme="dark"] .text-black { color: var(--bs-body-color) !important; }
-        [data-bs-theme="dark"] .card-header.bg-white { background-color: var(--bs-card-cap-bg) !important; color: var(--bs-body-color) !important; }
-        [data-bs-theme="dark"] .table-light { --bs-table-bg: #373c42; --bs-table-color: #fff; }
+        [data-bs-theme="dark"] {
+            --body-bg: #151521;
+            --sidebar-bg: #1e1e2d;
+            --sidebar-text: #ffffff;
+            --sidebar-border: rgba(255, 255, 255, 0.05);
+            --nav-link-color: rgba(255, 255, 255, 0.7) !important;
+        }
 
-        body { background-color: var(--bs-body-bg); transition: background-color 0.3s ease; overflow-x: hidden; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--body-bg);
+            color: var(--bs-body-color);
+            /* ADICIONE ISSO: Força a cor do texto padrão */
+            transition: all 0.3s ease;
+            overflow-x: hidden;
+        }
 
-        /* NAVBAR MOBILE */
-        .mobile-top-nav {
+        /* Sidebar Dinâmica */
+        #sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            background: var(--sidebar-bg);
+            color: var(--sidebar-text) !important;
+            z-index: 1100;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--sidebar-border);
+
+        }
+
+        #content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            transition: margin-left 0.3s;
+            padding: 2rem;
+        }
+
+        .nav-section-title,
+        #sidebar h6,
+        #sidebar span {
+            color: var(--sidebar-text) !important;
+        }
+
+        /* Mobile Top Bar */
+        .mobile-header {
             display: none;
             height: var(--top-nav-height);
             background: var(--sidebar-bg);
-            color: white;
-            align-items: center;
-            padding: 0 15px;
+            border-bottom: 1px solid var(--sidebar-border);
+            padding: 0 1rem;
             position: fixed;
             top: 0;
             width: 100%;
             z-index: 1050;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        /* SIDEBAR ESTRUTURA FIXA */
-        #sidebar { 
-            width: var(--sidebar-width); 
-            height: 100vh; 
-            position: fixed; 
-            background: var(--sidebar-bg); 
-            color: white;
-            transition: all 0.3s ease-in-out;
-            z-index: 1100;
-            left: 0;
-            display: flex !important;
-            flex-direction: column !important;
-            flex-wrap: nowrap !important; /* Impede a criação de novas colunas */
-            overflow: hidden;
+        /* Links do Menu */
+        .nav-link {
+            color: var(--nav-link-color);
+            padding: 0.7rem 1.2rem;
+            margin: 0.15rem 1rem;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+            font-size: 0.92rem;
+            transition: all 0.2s;
         }
 
-        /* HEADER E FOOTER DA SIDEBAR (Não encolhem) */
-        .sidebar-header, .sidebar-footer {
-            flex-shrink: 0;
+        .nav-link:hover {
+            color: var(--accent-color);
+            background: rgba(54, 153, 255, 0.08);
         }
 
-        /* CONTEÚDO ROLÁVEL (O menu) */
-        .nav-menu-scroll {
-            flex-grow: 1;
-            overflow-y: auto;
-            overflow-x: hidden;
+        .nav-link.active {
+            color: white !important;
+            background: var(--accent-color) !important;
+            box-shadow: 0 4px 12px rgba(54, 153, 255, 0.25);
         }
 
-        /* Scrollbar fina para o Menu */
-        .nav-menu-scroll::-webkit-scrollbar { width: 5px; }
-        .nav-menu-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        .nav-section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--sidebar-text) !important;
+            opacity: 0.5;
+            padding: 1.5rem 2.2rem 0.5rem;
+            font-weight: 800;
+        }
 
-        #content { 
-            margin-left: var(--sidebar-width); 
-            padding: 25px; 
-            min-height: 100vh; 
-            transition: all 0.3s; 
+        /* Footer da Sidebar */
+        .sidebar-footer {
+            background: rgba(0, 0, 0, 0.02);
+            border-top: 1px solid var(--sidebar-border);
+        }
+
+        [data-bs-theme="dark"] .sidebar-footer {
+            background: rgba(255, 255, 255, 0.02);
         }
 
         #sidebar-overlay {
             display: none;
             position: fixed;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0,0,0,0.5);
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(3px);
             z-index: 1090;
         }
 
-        .nav-link { 
-            color: rgba(255,255,255,0.6); 
-            font-size: 0.95rem;
-            padding: 0.8rem 1rem;
-            border-radius: 8px;
-            margin: 0.2rem 0.8rem;
-            display: flex;
-            align-items: center;
-            white-space: nowrap;
-            transition: 0.2s;
+        .dropdown-toggle {
+            color: var(--sidebar-text) !important;
         }
-
-        .nav-link:hover { color: white; background: rgba(255,255,255,0.05); }
-        .nav-link.active { color: white !important; background: var(--sidebar-active) !important; box-shadow: 0 4px 12px rgba(54, 153, 255, 0.3); }
-
-        .nav-section-title { font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: rgba(255,255,255,0.3); padding: 1.2rem 1.8rem 0.5rem; }
 
         @media (max-width: 991.98px) {
-            .mobile-top-nav { display: flex; }
-            #sidebar { left: calc(-1 * var(--sidebar-width)); }
-            #sidebar.active { left: 0; }
-            #content { margin-left: 0; padding-top: calc(var(--top-nav-height) + 20px); }
-            #sidebar-overlay.active { display: block; }
-        }
+            #sidebar {
+                transform: translateX(-100%);
+            }
 
-        .alert { border: none; border-radius: 10px; }
+            #sidebar.active {
+                transform: translateX(0);
+            }
+
+            #content {
+                margin-left: 0;
+                padding-top: calc(var(--top-nav-height) + 1rem);
+            }
+
+            .mobile-header {
+                display: flex;
+            }
+
+            #sidebar-overlay.active {
+                display: block;
+            }
+        }
     </style>
 </head>
-<body>
 
+<body>
     <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-    <header class="mobile-top-nav shadow-sm">
-        <button class="btn text-white fs-3 p-0 me-3" onclick="toggleSidebar()">
-            <i class="bi bi-list"></i>
+    <header class="mobile-header shadow-sm">
+        <button class="btn btn-link text-body p-0" onclick="toggleSidebar()">
+            <i class="bi bi-list fs-2"></i>
         </button>
-        <span class="fw-bold text-truncate">{{ current_user.papelaria.nome_fantasia }}</span>
+        <span class="fw-bold">
+            {% if current_user.is_authenticated and current_user.papelaria %}
+            {{ current_user.papelaria.nome_fantasia }}
+            {% else %}
+            Papelaria Pro
+            {% endif %}
+        </span>
+        <div></div>
     </header>
 
-    <nav id="sidebar" class="shadow">
-        <div class="sidebar-header p-4 text-center border-bottom border-secondary d-none d-lg-block">
-            {% if current_user.papelaria.logo_path %}
-                <img src="{{ url_for('static', filename=current_user.papelaria.logo_path) }}" 
-                     alt="Logo" class="img-fluid mb-2" style="max-height: 45px; border-radius: 5px;">
-            {% else %}
-                <i class="bi bi-pencil-square text-info mb-2 fs-3"></i>
-            {% endif %}
-            <h6 class="mb-0 fw-bold text-white text-uppercase small">{{ current_user.papelaria.nome_fantasia }}</h6>
+    <nav id="sidebar">
+        <div class="sidebar-header p-4 border-bottom border-opacity-10">
+            <div class="d-flex align-items-center gap-3">
+                {% if current_user.is_authenticated and current_user.papelaria and current_user.papelaria.logo_path %}
+                <img src="{{ url_for('static', filename=current_user.papelaria.logo_path) }}" alt="Logo"
+                    class="rounded shadow-sm" style="height: 42px; width: 42px; object-fit: cover;">
+                {% else %}
+                <div class="bg-primary rounded-3 d-flex align-items-center justify-content-center shadow-sm"
+                    style="height: 42px; width: 42px;">
+                    <i class="bi bi-box-fill text-white"></i>
+                </div>
+                {% endif %}
+                <div class="overflow-hidden">
+                    <h6 class="mb-0 fw-bold text-truncate">
+                        {% if current_user.is_authenticated and current_user.papelaria %}
+                        {{ current_user.papelaria.nome_fantasia }}
+                        {% else %}
+                        Sistema Pro
+                        {% endif %}
+                    </h6>
+                    <small class="opacity-50 fs-xs">Gestão Completa</small>
+                </div>
+            </div>
         </div>
 
-        <div class="nav-menu-scroll py-3">
-            <ul class="nav nav-pills flex-column">
-                <li class="nav-section-title">Principal</li>
-                <li><a href="{{ url_for('main.dashboard') }}" class="nav-link {{ 'active' if request.endpoint == 'main.dashboard' }}"><i class="bi bi-grid-1x2-fill me-2"></i> Dashboard</a></li>
-                <li><a href="{{ url_for('vendas.caixa') }}" class="nav-link {{ 'active' if request.endpoint == 'vendas.caixa' }}"><i class="bi bi-cpu-fill me-2"></i> Caixa</a></li>
+        <div class="flex-grow-1 overflow-y-auto py-2">
+            <ul class="nav flex-column">
+                <li class="nav-section-title">Início</li>
+                <li><a href="{{ url_for('main.dashboard') }}"
+                        class="nav-link {{ 'active' if request.endpoint == 'main.dashboard' }}"><i
+                            class="bi bi-grid-1x2-fill me-3"></i> Dashboard</a></li>
+                <li><a href="{{ url_for('vendas.caixa') }}"
+                        class="nav-link {{ 'active' if request.endpoint == 'vendas.caixa' }}"><i
+                            class="bi bi-cpu-fill me-3"></i> Caixa PDV</a></li>
+                <li><a href="{{ url_for('financeiro.dashboard') }}"
+                        class="nav-link {{ 'active' if request.endpoint == 'financeiro.dashboard' }}"><i
+                            class="bi bi-graph-up-arrow me-3"></i> Financeiro</a></li>
 
-                <li class="nav-section-title">Gestão</li>
-                <li><a href="{{ url_for('vendas.relatorio') }}" class="nav-link {{ 'active' if request.endpoint == 'vendas.relatorio' }}"><i class="bi bi-bar-chart-line-fill me-2"></i> Vendas</a></li>
-                <li><a href="{{ url_for('estoque.lista_produtos') }}" class="nav-link {{ 'active' if request.endpoint == 'estoque.lista_produtos' }}"><i class="bi bi-archive-fill me-2"></i> Produtos</a></li>
-                <li><a href="{{ url_for('servicos.lista') }}" class="nav-link {{ 'active' if request.endpoint == 'servicos.lista' }}"><i class="bi bi-layers-half me-2"></i> Serviços</a></li>
-                <li><a href="{{ url_for('despesas.lista') }}" class="nav-link {{ 'active' if request.endpoint == 'despesas.lista' }}"><i class="bi bi-wallet2 me-2"></i> Despesas</a></li>
-                <li><a href="{{ url_for('clientes.lista') }}" class="nav-link {{ 'active' if request.endpoint == 'clientes.lista' }}"><i class="bi bi-person-badge-fill me-2"></i> Clientes</a></li>
+                <li class="nav-section-title">Operacional</li>
+                <li><a href="{{ url_for('vendas.relatorio') }}"
+                        class="nav-link {{ 'active' if request.endpoint == 'vendas.relatorio' }}"><i
+                            class="bi bi-receipt me-3"></i> Relatório Vendas</a></li>
+                <li><a href="{{ url_for('estoque.lista_produtos') }}"
+                        class="nav-link {{ 'active' if request.endpoint == 'estoque.lista_produtos' }}"><i
+                            class="bi bi-archive-fill me-3"></i> Produtos</a></li>
+                <li><a href="{{ url_for('servicos.lista') }}"
+                        class="nav-link {{ 'active' if request.endpoint == 'servicos.lista' }}"><i
+                            class="bi bi-tools me-3"></i> Serviços</a></li>
+                <li><a href="{{ url_for('despesas.lista') }}"
+                        class="nav-link {{ 'active' if request.endpoint == 'despesas.lista' }}"><i
+                            class="bi bi-wallet2 me-3"></i> Despesas</a></li>
+                <li><a href="{{ url_for('clientes.lista') }}"
+                        class="nav-link {{ 'active' if request.endpoint == 'clientes.lista' }}"><i
+                            class="bi bi-person-vcard me-3"></i> Clientes</a></li>
 
-                <li class="nav-section-title">Ajustes</li>
-                <li><a href="{{ url_for('configuracoes.geral') }}" class="nav-link {{ 'active' if request.endpoint == 'configuracoes.geral' }}"><i class="bi bi-gear-fill me-2"></i> Empresa</a></li>
-                <li><a href="{{ url_for('configuracoes.lista_categorias') }}" class="nav-link {{ 'active' if 'categorias' in request.endpoint }}"><i class="bi bi-tags-fill me-2"></i> Categorias</a></li>
-                <li><a href="{{ url_for('configuracoes.lista_pagamentos') }}" class="nav-link {{ 'active' if 'pagamentos' in request.endpoint }}"><i class="bi bi-credit-card-2-back-fill me-2"></i> Pagamentos</a></li>
+                <li class="nav-section-title">Configurações</li>
+                <li><a href="{{ url_for('configuracoes.geral') }}"
+                        class="nav-link {{ 'active' if request.endpoint == 'configuracoes.geral' }}"><i
+                            class="bi bi-building me-3"></i> Minha Empresa</a></li>
+                <li><a href="{{ url_for('configuracoes.lista_categorias') }}"
+                        class="nav-link {{ 'active' if 'categorias' in request.endpoint }}"><i
+                            class="bi bi-tags me-3"></i> Categorias</a></li>
+                <li><a href="{{ url_for('configuracoes.lista_pagamentos') }}"
+                        class="nav-link {{ 'active' if 'pagamentos' in request.endpoint }}"><i
+                            class="bi bi-credit-card me-3"></i> Formas de Pagto</a></li>
             </ul>
         </div>
 
-        <div class="sidebar-footer p-3 border-top border-secondary bg-dark-subtle">
+        <div class="sidebar-footer p-3">
             <div class="d-flex align-items-center justify-content-between mb-3 px-2">
-                <small class="fw-bold opacity-50 text-white">TEMA</small>
+                <small class="fw-bold opacity-75"><i class="bi bi-sun-fill me-2"></i>Escuro</small>
                 <div class="form-check form-switch p-0 m-0">
                     <input class="form-check-input" type="checkbox" id="themeToggle" style="cursor: pointer;">
                 </div>
             </div>
-            
+
+            {% if current_user.is_authenticated %}
             <div class="dropdown">
-                <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle px-1" data-bs-toggle="dropdown">
-                    <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2 flex-shrink-0" style="width: 32px; height: 32px;">
-                        <span class="small fw-bold">{{ current_user.username[0]|upper }}</span>
+                <button class="btn btn-outline-secondary border-0 w-100 d-flex align-items-center p-2"
+                    data-bs-toggle="dropdown">
+                    <div class="bg-primary rounded-circle me-2 d-flex align-items-center justify-content-center text-white"
+                        style="width: 32px; height: 32px;">
+                        <span class="small fw-bold">{{ current_user.username[0]|upper if current_user.username else 'U'
+                            }}</span>
                     </div>
-                    <div class="d-flex flex-column overflow-hidden">
-                        <span class="small fw-bold text-truncate" style="max-width: 130px;">{{ current_user.username }}</span>
-                    </div>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-dark shadow border-secondary">
-                    <li><a class="dropdown-item" href="{{ url_for('configuracoes.geral') }}">Perfil</a></li>
-                    <li><hr class="dropdown-divider border-secondary"></li>
-                    <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">Sair</a></li>
+                    <span class="text-truncate flex-grow-1 text-start" style="font-size: 0.85rem;">{{
+                        current_user.username }}</span>
+                    <i class="bi bi-chevron-up small opacity-50"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-dark shadow w-100">
+                    <li><a class="dropdown-item" href="{{ url_for('configuracoes.geral') }}">Meu Perfil</a></li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+                    <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">Sair do Sistema</a>
+                    </li>
                 </ul>
             </div>
+            {% else %}
+            <a href="{{ url_for('auth.login_cliente') }}" class="btn btn-primary w-100">Entrar</a>
+            {% endif %}
         </div>
     </nav>
 
     <main id="content">
         {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show shadow-sm">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div
+            class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show border-0 shadow-sm mb-4">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
         {% endwith %}
 
         {% block content %}{% endblock %}
@@ -198,7 +304,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 
     <script>
         function toggleSidebar() {
@@ -209,7 +314,7 @@
         const html = document.documentElement;
         const themeToggle = document.getElementById('themeToggle');
         const savedTheme = localStorage.getItem('theme') || 'light';
-        
+
         html.setAttribute('data-bs-theme', savedTheme);
         themeToggle.checked = savedTheme === 'dark';
 
@@ -219,7 +324,7 @@
             localStorage.setItem('theme', newTheme);
         });
     </script>
-
     {% block scripts %}{% endblock %}
 </body>
+
 </html>

@@ -44,7 +44,7 @@
 
         <div class="col-sm-6 col-xl-3">
             {% set saldo = faturamento_dia - total_despesas_dia %}
-            <div class="card border-0 shadow-sm h-100 card-kpi {% if saldo >= 0 %}bg-success{% else %}bg-warning text-dark{% endif %}">
+            <div class="card border-0 shadow-sm h-100 card-kpi {% if saldo >= 0 %}bg-success{% else %}bg-warning {% endif %}">
                 <div class="card-body p-4 text-white">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <h6 class="text-uppercase small fw-bold mb-0 opacity-75">Saldo Diário</h6>

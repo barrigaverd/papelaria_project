@@ -11,6 +11,7 @@ from app.routes.clientes import clientes
 from app.routes.servicos import servicos
 from app.routes.configuracoes import configuracoes
 from app.routes.despesas import despesas
+from app.routes.financeiro import financeiro
 from dotenv import load_dotenv
 # Instanciação das extensões (serão ligadas ao app depois)
 load_dotenv()
@@ -46,8 +47,7 @@ def create_app():
     app.register_blueprint(clientes, url_prefix='/clientes')
     app.register_blueprint(servicos, url_prefix='/servicos')
     app.register_blueprint(despesas, url_prefix='/despesas')
-    
-    
+    app.register_blueprint(financeiro, url_prefix='/dashboard')   
     #   - Defina a rota de login padrão: login_manager.login_view = 'auth.login_cliente'
     login_manager.login_view = 'auth.login_cliente'
     #   - Opcional: Defina a categoria da mensagem de erro (ex: 'info' ou 'danger')

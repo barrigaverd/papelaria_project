@@ -73,14 +73,14 @@
                         {% for d in despesas %}
                         <tr class="{% if d.status == 'Pendente' and d.data_vencimento < now.date() %}table-danger-light{% endif %}">
                             <td class="ps-4">
-                                <span class="fw-bold d-block text-dark">{{ d.descricao }}</span>
+                                <span class="fw-bold d-block">{{ d.descricao }}</span>
                                 <small class="text-muted">{{ d.observacao or '' }}</small>
                             </td>
                             <td>
                                 <span class="badge bg-secondary opacity-75">{{ d.categoria.descricao }}</span>
                             </td>
                             <td>{{ d.data_vencimento.strftime('%d/%m/%Y') }}</td>
-                            <td class="fw-bold text-dark">R$ {{ "%.2f"|format(d.valor) }}</td>
+                            <td class="fw-bold">R$ {{ "%.2f"|format(d.valor) }}</td>
                             <td>
                                 {% if d.status == 'Pago' %}
                                     <span class="badge bg-success-light text-success px-3 py-2">PAGO</span>

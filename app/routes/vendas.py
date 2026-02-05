@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, abort
 from flask_login import login_required, current_user
-from models import Produto, Servico, Movimentacao, FormaPagamento, Cliente
+from models import Produto, Servico, Movimentacao, FormaPagamento, Cliente, Transacao
 from extensions import db
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -53,33 +53,35 @@ def finalizar():
     dados = request.get_json()
     itens = dados.get('itens')
     cliente_id = dados.get('cliente_id')
-    venda_id = str(uuid.uuid4()) # Gera o ID único da venda
+    venda_id = str(uuid.uuid4())
     
-    # Pegamos a data enviada ou usamos a atual
     data_venda_str = dados.get('data_venda')
     data_final = datetime.strptime(data_venda_str, '%Y-%m-%d') if data_venda_str else datetime.now()
 
+    # --- NOVIDADE: Variável para somar o total da venda para o financeiro ---
+    valor_total_venda = 0
+
     for item in itens:
-        # --- AQUI ESTÁ A CORREÇÃO ---
-        # Precisamos descobrir o nome do item para salvar no cupom
         nome_para_descricao = ""
+        valor_item = float(item['preco']) * int(item['quantidade'])
         
+        # Somamos ao total que irá para a tabela Transacao
+        valor_total_venda += valor_item
+
         if item['tipo'] == 'produto':
             prod = Produto.query.get(item['id'])
-            nome_para_descricao = prod.nome # Pega o nome da tabela Produto
-            # Aproveite para baixar o estoque aqui
+            nome_para_descricao = prod.nome
             prod.estoque_atual -= int(item['quantidade'])
         else:
             serv = Servico.query.get(item['id'])
-            nome_para_descricao = serv.descricao # Pega a descrição da tabela Servico
+            nome_para_descricao = serv.descricao
 
-        # Criamos a movimentação com a descrição preenchida
         nova_mov = Movimentacao(
             papelaria_id=current_user.papelaria_id,
             tipo='SAIDA',
             categoria='Venda' if item['tipo'] == 'produto' else 'Serviço',
-            descricao=nome_para_descricao, # <--- AGORA O NOME VAI PARA O CUPOM
-            valor=float(item['preco']) * int(item['quantidade']),
+            descricao=nome_para_descricao,
+            valor=valor_item,
             quantidade=int(item['quantidade']),
             produto_id=item['id'] if item['tipo'] == 'produto' else None,
             servico_id=item['id'] if item['tipo'] == 'servico' else None,
@@ -88,6 +90,19 @@ def finalizar():
             data=data_final
         )
         db.session.add(nova_mov)
+
+    # ================================================================
+    # PONTE PARA O FINANCEIRO: Aqui criamos o registro que o gráfico lê
+    # ================================================================
+    nova_fin = Transacao(
+        tipo='receita',
+        valor=valor_total_venda,
+        categoria='Venda de Balcão',
+        usuario_id=current_user.id,
+        data=data_final
+    )
+    db.session.add(nova_fin)
+    # ================================================================
 
     db.session.commit()
     return jsonify({"status": "sucesso", "venda_id": venda_id})
@@ -216,6 +231,7 @@ def estornar_ticket(venda_id):
                 item.produto.estoque_atual += item.quantidade
             db.session.delete(item)
         
+        Transacao.query.filter_by(usuario_id=current_user.id, data=itens[0].data).delete()
         db.session.commit()
         flash(f"Venda #{venda_id} cancelada inteira!", "success")
     except:

@@ -52,6 +52,7 @@ class Papelaria(db.Model):
 class Usuario(db.Model, UserMixin):
 # Atributos:
 # - id: Inteiro, chave primária.
+    __tablename__ = 'usuarios'
     id = db.Column(db.Integer, primary_key=True)
 # - papelaria_id: Inteiro, Chave Estrangeira (db.ForeignKey) apontando para a tabela Papelaria.
     papelaria_id = db.Column(db.Integer, db.ForeignKey('papelaria.id'), nullable=False)
@@ -190,3 +191,12 @@ class Despesa(db.Model):
     # Categoria terá um backref 'despesas' automaticamente se você usar relationship
     
     papelaria_id = db.Column(db.Integer, db.ForeignKey('papelaria.id'))
+
+class Transacao(db.Model):
+    __tablename__ = 'transacoes'
+    id = db.Column(db.Integer, primary_key=True)
+    tipo = db.Column(db.String(10), nullable=False) # 'receita' ou 'despesa'
+    valor = db.Column(db.Float, nullable=False)
+    categoria = db.Column(db.String(50)) # ex: 'Papel', 'Tinta', 'Venda Servico'
+    data = db.Column(db.DateTime, default=datetime.utcnow)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
